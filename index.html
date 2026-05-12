@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tower Battles — Loadout Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2330;
+    --border: #30363d;
+    --border-bright: #484f58;
+    --text: #e6edf3;
+    --text-muted: #7d8590;
+    --text-dim: #484f58;
+    --accent: #58a6ff;
+    --accent-dim: #1f3a5c;
+    --green: #3fb950;
+    --green-dim: #1a3a20;
+    --red: #f85149;
+    --red-dim: #3d1c1a;
+    --gold: #d29922;
+    --gold-dim: #3d2c0a;
+    --pink: #f07ab0;
+    --pink-dim: #3d1a2e;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    min-height: 100vh;
+    padding: 2rem 1rem 4rem;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 0%, rgba(88,166,255,0.06) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 80% 100%, rgba(63,185,80,0.04) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  h1 {
+    font-size: clamp(28px, 6vw, 48px);
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .tagline {
+    margin-top: 0.5rem;
+    font-size: 15px;
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+
+  .section-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .force-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .force-btn {
+    padding: 10px 20px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-radius: 6px;
+    border: 1px solid var(--border-bright);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .force-btn:hover {
+    border-color: var(--accent);
+    color: var(--text);
+  }
+
+  .force-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  #btn-stall.active {
+    background: var(--orange-dim);
+    border-color: var(--orange);
+    color: var(--orange);
+  }
+
+  #btn-tournament.active {
+    background: var(--pink-dim);
+    border-color: var(--pink);
+    color: var(--pink);
+  }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.75rem 0;
+  }
+
+  .slots {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 1.5rem;
+  }
+
+  @media (max-width: 500px) {
+    .slots { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .slot {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 8px;
+    text-align: center;
+    height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: border-color 0.2s;
+    overflow: hidden;
+  }
+
+  .slot.farm {
+    border-color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  .slot.forced-support {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+  }
+
+  .slot.forced-aoe {
+    border-color: var(--orange);
+    background: var(--orange-dim);
+  }
+
+  .slot-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .slot.farm .slot-tag { color: var(--gold); }
+  .slot.forced .slot-tag { color: var(--accent); }
+
+  .slot-name {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text);
+    line-height: 1.2;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: clip;
+    display: block;
+  }
+
+  .generate-btn {
+    width: 100%;
+    padding: 16px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 16px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: 8px;
+    border: 1px solid var(--green);
+    background: var(--green-dim);
+    color: var(--green);
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 2rem;
+  }
+
+  .generate-btn:hover {
+    background: var(--green);
+    color: #0d1117;
+  }
+
+  .generate-btn:active {
+    transform: scale(0.98);
+  }
+
+  .ban-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .ban-btn {
+    padding: 6px 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .ban-btn:hover {
+    border-color: var(--border-bright);
+    color: var(--text);
+  }
+
+  .ban-btn.banned {
+    background: var(--red-dim);
+    border-color: var(--red);
+    color: var(--red);
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+
+  footer {
+    text-align: center;
+    margin-top: 3rem;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <h1>TB <span>Loadout Generator</span></h1>
+
+  </header>
+
+  <p class="section-label">Force settings</p>
+  <div class="force-row">
+    <button class="force-btn" id="btn-support" onclick="toggleForce('support', this)">⚑ Force Support (Commander / DJ)</button>
+    <button class="force-btn" id="btn-stall" onclick="toggleForce('stall', this)">✦ Force Stall (Flamethrower / Hallowboomer / Cryo-Gunner)</button>
+    <button class="force-btn" id="btn-tournament" onclick="toggleTournament(this)">⬡ Balancing Battles Tournament Restriction</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="slots" id="slots">
+    <div class="slot farm" id="slot0">
+      <span class="slot-name" id="s0">—</span>
+    </div>
+    <div class="slot" id="slot1">
+      <span class="slot-name" id="s1">—</span>
+    </div>
+    <div class="slot" id="slot2">
+      <span class="slot-name" id="s2">—</span>
+    </div>
+    <div class="slot" id="slot3">
+      <span class="slot-name" id="s3">—</span>
+    </div>
+    <div class="slot" id="slot4">
+      <span class="slot-name" id="s4">—</span>
+    </div>
+  </div>
+
+  <button class="generate-btn" onclick="generate()">⟳ Generate Loadout</button>
+
+  <hr class="divider">
+
+  <p class="section-label">Ban list — click to ban</p>
+  <div class="ban-grid" id="ban-grid"></div>
+
+
+
+</div>
+<script>
+  const ALL_TOWERS = [
+    'DJ', 'Commander', 'Aviator', 'Phaser', 'Marksman', 'Anarchist',
+    'Tweeter', 'Plasma Trooper', 'Mercenary', 'Mortar', 'Barracks', 'Patrol',
+    'Commando', 'Cryo-Gunner', 'Railgunner', 'Enforcer', 'Shotgunner', 'Soldier',
+    'Fragger', 'Flamethrower', 'Golden Scout', 'Golden Commando', 'Hallowboomer', 'Tuber',
+    'Zed', 'Graveyard', 'Farm'
+  ];
+
+  const POOL = ALL_TOWERS.filter(t => t !== 'Farm');
+  const SUPPORT = ['Commander', 'DJ'];
+  const STALL = ['Flamethrower', 'Hallowboomer', 'Cryo-Gunner'];
+  const TOURNAMENT = ['Aviator', 'Phaser', 'Mercenary', 'Enforcer', 'Soldier', 'Golden Scout', 'Cryo-Gunner', 'Tuber', 'Fragger', 'Marksman'];
+
+  const forced = { support: false, stall: false };
+  const banned = new Set();
+  let tournamentActive = false;
+
+  function toggleForce(group, btn) {
+    forced[group] = !forced[group];
+    btn.classList.toggle('active', forced[group]);
+  }
+
+  function toggleTournament(btn) {
+    tournamentActive = !tournamentActive;
+    btn.classList.toggle('active', tournamentActive);
+    const allBtns = document.querySelectorAll('.ban-btn');
+    allBtns.forEach(b => {
+      const tower = b.textContent;
+      if (tower === 'Farm') return;
+      if (tournamentActive) {
+        if (!TOURNAMENT.includes(tower)) {
+          banned.add(tower);
+          b.classList.add('banned');
+        } else {
+          banned.delete(tower);
+          b.classList.remove('banned');
+        }
+      } else {
+        banned.delete(tower);
+        b.classList.remove('banned');
+      }
+    });
+  }
+
+  function shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function pickFrom(pool) {
+    const available = pool.filter(t => !banned.has(t));
+    return available.length ? shuffle(available)[0] : null;
+  }
+
+  function fitSlotText(el) {
+    const words = el.textContent.trim().split(' ');
+    if (words.length >= 2) {
+      el.style.fontSize = '14px';
+      el.style.whiteSpace = 'normal';
+      el.style.wordBreak = 'break-word';
+    } else {
+      el.style.whiteSpace = 'nowrap';
+      el.style.wordBreak = 'normal';
+      let size = 14;
+      el.style.fontSize = size + 'px';
+      while (el.scrollWidth > el.offsetWidth && size > 7) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+      }
+    }
+  }
+
+  function generate() {
+    const forcedPicks = [];
+    let forcedSupport = null, forcedStall = null;
+    if (forced.support) {
+      const pick = pickFrom(SUPPORT);
+      if (pick) { forcedPicks.push(pick); forcedSupport = pick; }
+    }
+    if (forced.stall) {
+      const pick = pickFrom(STALL.filter(t => !forcedPicks.includes(t)));
+      if (pick) { forcedPicks.push(pick); forcedStall = pick; }
+    }
+
+    const remaining = POOL.filter(t => !banned.has(t) && !forcedPicks.includes(t));
+    const needed = 4 - forcedPicks.length;
+    const randoms = shuffle(remaining).slice(0, needed);
+    const slots4 = shuffle([...forcedPicks, ...randoms]);
+    const names = ['Farm', ...slots4];
+
+    for (let i = 0; i < 5; i++) {
+      const el = document.getElementById('s' + i);
+      const slot = document.getElementById('slot' + i);
+      el.textContent = names[i] || '—';
+      fitSlotText(el);
+      if (i > 0) {
+        slot.classList.remove('forced-support', 'forced-aoe');
+        if (forcedSupport === names[i]) slot.classList.add('forced-support');
+        else if (forcedStall === names[i]) slot.classList.add('forced-aoe');
+      }
+    }
+  }
+
+  function buildBanGrid() {
+    const grid = document.getElementById('ban-grid');
+    ALL_TOWERS.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'ban-btn';
+      btn.textContent = t;
+      btn.onclick = () => {
+        if (banned.has(t)) banned.delete(t);
+        else banned.add(t);
+        btn.classList.toggle('banned');
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  buildBanGrid();
+</script>
+</body>
+</html>
