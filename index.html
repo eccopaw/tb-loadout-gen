@@ -27,6 +27,8 @@
     --gold-dim: #3d2c0a;
     --pink: #f07ab0;
     --pink-dim: #3d1a2e;
+    --orange: #f0883e;
+    --orange-dim: #3d2010;
   }
 
   body {
@@ -102,17 +104,17 @@
 
   .force-row {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 6px;
+    flex-wrap: nowrap;
     margin-bottom: 2rem;
   }
 
   .force-btn {
-    padding: 10px 20px;
+    padding: 8px 10px 8px 12px;
     font-family: 'Montserrat', sans-serif;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 700;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     text-transform: uppercase;
     border-radius: 6px;
     border: 1px solid var(--border-bright);
@@ -120,6 +122,13 @@
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    position: relative;
+    white-space: nowrap;
+    flex: 1;
+    justify-content: center;
   }
 
   .force-btn:hover {
@@ -133,17 +142,91 @@
     color: var(--accent);
   }
 
-  #btn-stall.active {
+  #btn-stall.active, #btn-stall:active {
     background: var(--orange-dim);
     border-color: var(--orange);
     color: var(--orange);
   }
 
-  #btn-tournament.active {
+  #btn-cc.active, #btn-cc:active {
     background: var(--pink-dim);
     border-color: var(--pink);
     color: var(--pink);
   }
+
+  #btn-dps.active, #btn-dps:active {
+    background: var(--red-dim);
+    border-color: var(--red);
+    color: var(--red);
+  }
+
+  .force-btn-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .info-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: 0.5;
+    font-size: 11px;
+    cursor: default;
+    flex-shrink: 0;
+    position: relative;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+  }
+
+  .info-icon:hover {
+    opacity: 1;
+  }
+
+  .info-icon:hover .tooltip {
+    display: block;
+  }
+
+  .tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 8px 12px;
+    width: 220px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    line-height: 1.6;
+    text-transform: none;
+    letter-spacing: 0;
+    white-space: normal;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--border-bright);
+  }
+
+
 
   .divider {
     border: none;
@@ -179,8 +262,8 @@
   }
 
   .slot.farm {
-    border-color: var(--gold);
-    background: var(--gold-dim);
+    border-color: var(--green);
+    background: var(--green-dim);
   }
 
   .slot.forced-support {
@@ -191,6 +274,16 @@
   .slot.forced-aoe {
     border-color: var(--orange);
     background: var(--orange-dim);
+  }
+
+  .slot.forced-cc {
+    border-color: var(--pink);
+    background: var(--pink-dim);
+  }
+
+  .slot.forced-dps {
+    border-color: var(--red);
+    background: var(--red-dim);
   }
 
   .slot-tag {
@@ -278,6 +371,38 @@
     opacity: 0.7;
   }
 
+  .force-list-grid {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .force-list-btn {
+    padding: 6px 14px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+
+  .force-list-btn:hover {
+    border-color: var(--border-bright);
+    color: var(--text);
+  }
+
+  .force-list-btn.forced {
+    background: var(--green-dim);
+    border-color: var(--green);
+    color: var(--green);
+  }
+
   footer {
     text-align: center;
     margin-top: 3rem;
@@ -298,15 +423,28 @@
 
   <p class="section-label">Force settings</p>
   <div class="force-row">
-    <button class="force-btn" id="btn-support" onclick="toggleForce('support', this)">⚑ Force Support (Commander / DJ)</button>
-    <button class="force-btn" id="btn-stall" onclick="toggleForce('stall', this)">✦ Force Stall (Flamethrower / Hallowboomer / Cryo-Gunner)</button>
-    <button class="force-btn" id="btn-tournament" onclick="toggleTournament(this)">⬡ Balancing Battles Tournament Restriction</button>
+    <button class="force-btn" id="btn-support" onclick="toggleForce('support', this)">
+      Force Support
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Commander, DJ</span></span>
+    </button>
+    <button class="force-btn" id="btn-stall" onclick="toggleForce('stall', this)">
+      Force Stall
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Flamethrower, Hallowboomer, Cryo-Gunner, Sleeter, Harpoon Hunter, Snowballer, Stunner, Scarecrow</span></span>
+    </button>
+    <button class="force-btn" id="btn-cc" onclick="toggleForce('cc', this)">
+      Force CC
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Aviator, Plasma Trooper, Mortar, Shotgunner, Fragger, Tuber, Flamethrower, Hallowboomer, Elf, Patrioteer, Enforcer</span></span>
+    </button>
+    <button class="force-btn" id="btn-dps" onclick="toggleForce('dps', this)">
+      Force Single DPS
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Sniper, Marksman, Tweeter, Mercenary, Barracks, Commando, Enforcer, Soldier, Golden Commando, Golden Scout, Huntsman, Harpoon Hunter, Red Sniper</span></span>
+    </button>
   </div>
 
   <hr class="divider">
 
   <div class="slots" id="slots">
-    <div class="slot farm" id="slot0">
+    <div class="slot" id="slot0">
       <span class="slot-name" id="s0">—</span>
     </div>
     <div class="slot" id="slot1">
@@ -330,6 +468,11 @@
   <p class="section-label">Ban list — click to ban</p>
   <div class="ban-grid" id="ban-grid"></div>
 
+  <hr class="divider">
+
+  <p class="section-label">Force list — click to force</p>
+  <div class="force-list-grid" id="force-list-grid"></div>
+
 
 
 </div>
@@ -339,43 +482,34 @@
     'Tweeter', 'Plasma Trooper', 'Mercenary', 'Mortar', 'Barracks', 'Patrol',
     'Commando', 'Cryo-Gunner', 'Railgunner', 'Enforcer', 'Shotgunner', 'Soldier',
     'Fragger', 'Flamethrower', 'Golden Scout', 'Golden Commando', 'Hallowboomer', 'Tuber',
-    'Zed', 'Graveyard', 'Farm'
+    'Zed', 'Graveyard'
   ];
 
-  const POOL = ALL_TOWERS.filter(t => t !== 'Farm');
-  const SUPPORT = ['Commander', 'DJ'];
-  const STALL = ['Flamethrower', 'Hallowboomer', 'Cryo-Gunner'];
-  const TOURNAMENT = ['Aviator', 'Phaser', 'Mercenary', 'Enforcer', 'Soldier', 'Golden Scout', 'Cryo-Gunner', 'Tuber', 'Fragger', 'Marksman'];
+  const DEFAULT_BANNED = new Set([
+    'Huntsman', 'Elf', 'Sleeter', 'Harpoon Hunter', 'Snowballer',
+    'Ice Cream', 'Stunner', 'Patrioteer', 'Scarecrow', 'Sniper', 'Red Sniper'
+  ]);
 
-  const forced = { support: false, stall: false };
-  const banned = new Set();
-  let tournamentActive = false;
+  const ALL_TOWERS_FULL = [
+    'Farm',
+    ...ALL_TOWERS,
+    'Huntsman', 'Elf', 'Sleeter', 'Harpoon Hunter', 'Snowballer',
+    'Ice Cream', 'Stunner', 'Patrioteer', 'Scarecrow', 'Sniper', 'Red Sniper'
+  ];
+
+  const POOL = [...ALL_TOWERS_FULL];
+  const SUPPORT = ['Commander', 'DJ'];
+  const STALL = ['Flamethrower', 'Hallowboomer', 'Cryo-Gunner', 'Sleeter', 'Harpoon Hunter', 'Snowballer', 'Stunner', 'Scarecrow'];
+  const CC = ['Aviator', 'Plasma Trooper', 'Mortar', 'Shotgunner', 'Fragger', 'Tuber', 'Flamethrower', 'Hallowboomer', 'Elf', 'Patrioteer', 'Enforcer'];
+  const DPS = ['Sniper', 'Marksman', 'Tweeter', 'Mercenary', 'Barracks', 'Commando', 'Enforcer', 'Soldier', 'Golden Commando', 'Golden Scout', 'Huntsman', 'Harpoon Hunter', 'Red Sniper'];
+
+  const forced = { support: false, stall: false, cc: false, dps: false };
+  const banned = new Set(DEFAULT_BANNED);
+  const forceList = new Set(['Farm']);
 
   function toggleForce(group, btn) {
     forced[group] = !forced[group];
     btn.classList.toggle('active', forced[group]);
-  }
-
-  function toggleTournament(btn) {
-    tournamentActive = !tournamentActive;
-    btn.classList.toggle('active', tournamentActive);
-    const allBtns = document.querySelectorAll('.ban-btn');
-    allBtns.forEach(b => {
-      const tower = b.textContent;
-      if (tower === 'Farm') return;
-      if (tournamentActive) {
-        if (!TOURNAMENT.includes(tower)) {
-          banned.add(tower);
-          b.classList.add('banned');
-        } else {
-          banned.delete(tower);
-          b.classList.remove('banned');
-        }
-      } else {
-        banned.delete(tower);
-        b.classList.remove('banned');
-      }
-    });
   }
 
   function shuffle(arr) {
@@ -411,42 +545,68 @@
   }
 
   function generate() {
-    const forcedPicks = [];
-    let forcedSupport = null, forcedStall = null;
+    const forcedListPicks = new Set();
+    let forcedSupport = null, forcedStall = null, forcedCC = null, forcedDPS = null;
+    const forcedNonFarm = [];
+
     if (forced.support) {
       const pick = pickFrom(SUPPORT);
-      if (pick) { forcedPicks.push(pick); forcedSupport = pick; }
+      if (pick) { forcedNonFarm.push(pick); forcedSupport = pick; }
     }
     if (forced.stall) {
-      const pick = pickFrom(STALL.filter(t => !forcedPicks.includes(t)));
-      if (pick) { forcedPicks.push(pick); forcedStall = pick; }
+      const pick = pickFrom(STALL.filter(t => !forcedNonFarm.includes(t)));
+      if (pick) { forcedNonFarm.push(pick); forcedStall = pick; }
+    }
+    if (forced.cc) {
+      const pick = pickFrom(CC.filter(t => !forcedNonFarm.includes(t)));
+      if (pick) { forcedNonFarm.push(pick); forcedCC = pick; }
+    }
+    if (forced.dps) {
+      const pick = pickFrom(DPS.filter(t => !forcedNonFarm.includes(t)));
+      if (pick) { forcedNonFarm.push(pick); forcedDPS = pick; }
     }
 
-    const remaining = POOL.filter(t => !banned.has(t) && !forcedPicks.includes(t));
-    const needed = 4 - forcedPicks.length;
+    // Other force list picks (excluding Farm)
+    for (const t of forceList) {
+      if (t === 'Farm') continue;
+      if (!forcedNonFarm.includes(t) && forcedNonFarm.length < 4) {
+        forcedNonFarm.push(t);
+        forcedListPicks.add(t);
+      }
+    }
+
+    const farmForced = forceList.has('Farm');
+    const allForced = farmForced ? [...forcedNonFarm, 'Farm'] : [...forcedNonFarm];
+    const remaining = POOL.filter(t => !banned.has(t) && !allForced.includes(t));
+    const needed = 5 - allForced.length;
     const randoms = shuffle(remaining).slice(0, needed);
-    const slots4 = shuffle([...forcedPicks, ...randoms]);
-    const names = ['Farm', ...slots4];
+
+    const names = farmForced
+      ? ['Farm', ...forcedNonFarm, ...randoms]
+      : [...forcedNonFarm, ...randoms];
 
     for (let i = 0; i < 5; i++) {
       const el = document.getElementById('s' + i);
       const slot = document.getElementById('slot' + i);
       el.textContent = names[i] || '—';
       fitSlotText(el);
-      if (i > 0) {
-        slot.classList.remove('forced-support', 'forced-aoe');
-        if (forcedSupport === names[i]) slot.classList.add('forced-support');
-        else if (forcedStall === names[i]) slot.classList.add('forced-aoe');
-      }
+      slot.className = 'slot';
+      if (names[i] === 'Farm') slot.classList.add('farm');
+      else if (forcedSupport === names[i]) slot.classList.add('forced-support');
+      else if (forcedStall === names[i]) slot.classList.add('forced-aoe');
+      else if (forcedCC === names[i]) slot.classList.add('forced-cc');
+      else if (forcedDPS === names[i]) slot.classList.add('forced-dps');
+      else if (forcedListPicks.has(names[i])) slot.classList.add('forced-support');
     }
   }
 
   function buildBanGrid() {
     const grid = document.getElementById('ban-grid');
-    ALL_TOWERS.forEach(t => {
+    ALL_TOWERS_FULL.forEach(t => {
       const btn = document.createElement('button');
       btn.className = 'ban-btn';
       btn.textContent = t;
+      if (DEFAULT_BANNED.has(t)) btn.classList.add('banned');
       btn.onclick = () => {
         if (banned.has(t)) banned.delete(t);
         else banned.add(t);
@@ -456,7 +616,24 @@
     });
   }
 
+  function buildForceListGrid() {
+    const grid = document.getElementById('force-list-grid');
+    ALL_TOWERS_FULL.forEach(t => {
+      const btn = document.createElement('button');
+      btn.className = 'force-list-btn';
+      btn.textContent = t;
+      if (forceList.has(t)) btn.classList.add('forced');
+      btn.onclick = () => {
+        if (forceList.has(t)) forceList.delete(t);
+        else forceList.add(t);
+        btn.classList.toggle('forced');
+      };
+      grid.appendChild(btn);
+    });
+  }
+
   buildBanGrid();
+  buildForceListGrid();
 </script>
 </body>
 </html>
