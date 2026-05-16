@@ -160,6 +160,12 @@
     color: var(--red);
   }
 
+  #btn-preset.active, #btn-preset:active {
+    background: var(--gold-dim);
+    border-color: var(--gold);
+    color: var(--gold);
+  }
+
   .force-btn-wrap {
     position: relative;
     display: inline-flex;
@@ -433,11 +439,18 @@
     </button>
     <button class="force-btn" id="btn-cc" onclick="toggleForce('cc', this)">
       Force CC
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Aviator, Plasma Trooper, Mortar, Shotgunner, Fragger, Tuber, Hallowboomer, Elf, Patrioteer, Enforcer</span></span>
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Aviator, Plasma Trooper, Mortar, Shotgunner, Fragger, Tuber, Flamethrower, Hallowboomer, Elf, Patrioteer, Enforcer</span></span>
     </button>
     <button class="force-btn" id="btn-dps" onclick="toggleForce('dps', this)">
       Force Single DPS
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Sniper, Marksman, Tweeter, Mercenary, Commando, Enforcer, Soldier, Golden Commando, Golden Scout, Huntsman, Harpoon Hunter, Red Sniper</span></span>
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Sniper, Marksman, Tweeter, Mercenary, Barracks, Commando, Enforcer, Soldier, Golden Commando, Golden Scout, Huntsman, Harpoon Hunter, Red Sniper</span></span>
+    </button>
+  </div>
+
+  <div class="force-row" style="margin-top: -1.25rem;">
+    <button class="force-btn" id="btn-preset" onclick="togglePreset(this)">
+      Balancing Battles Restriction
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Allows only: Aviator, Flamethrower, Enforcer, Fragger, Mercenary, Phaser, Soldier, Tuber, Golden Commando, Zed</span></span>
     </button>
   </div>
 
@@ -506,6 +519,37 @@
   const forced = { support: false, stall: false, cc: false, dps: false };
   const banned = new Set(DEFAULT_BANNED);
   const forceList = new Set(['Farm']);
+
+  const PRESET_ALLOWED = new Set(['Aviator', 'Flamethrower', 'Enforcer', 'Fragger', 'Mercenary', 'Phaser', 'Soldier', 'Tuber', 'Golden Commando', 'Zed']);
+  let presetActive = false;
+
+  function togglePreset(btn) {
+    presetActive = !presetActive;
+    btn.classList.toggle('active', presetActive);
+
+    const banBtns = document.querySelectorAll('.ban-btn');
+    banBtns.forEach(b => {
+      const tower = b.textContent.trim();
+      if (presetActive) {
+        if (!PRESET_ALLOWED.has(tower)) {
+          banned.add(tower);
+          b.classList.add('banned');
+        } else {
+          banned.delete(tower);
+          b.classList.remove('banned');
+        }
+      } else {
+        // Restore to default banned state
+        if (DEFAULT_BANNED.has(tower)) {
+          banned.add(tower);
+          b.classList.add('banned');
+        } else {
+          banned.delete(tower);
+          b.classList.remove('banned');
+        }
+      }
+    });
+  }
 
   function toggleForce(group, btn) {
     forced[group] = !forced[group];
