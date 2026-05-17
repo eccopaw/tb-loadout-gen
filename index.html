@@ -450,7 +450,7 @@
   <div class="force-row" style="margin-top: -1.25rem;">
     <button class="force-btn" id="btn-preset" onclick="togglePreset(this)">
       Balancing Battles Restriction
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Allows only: Aviator, Flamethrower, Enforcer, Fragger, Mercenary, Phaser, Soldier, Tuber, Golden Commando, Zed</span></span>
+      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Allows only: Aviator, Enforcer, Fragger, Mercenary, Phaser, Soldier, Tuber, Golden Commando, Zed</span></span>
     </button>
   </div>
 
@@ -520,7 +520,7 @@
   const banned = new Set(DEFAULT_BANNED);
   const forceList = new Set(['Farm']);
 
-  const PRESET_ALLOWED = new Set(['Aviator', 'Flamethrower', 'Enforcer', 'Fragger', 'Mercenary', 'Phaser', 'Soldier', 'Tuber', 'Golden Commando', 'Zed']);
+  const PRESET_ALLOWED = new Set(['Aviator', 'Enforcer', 'Fragger', 'Mercenary', 'Phaser', 'Soldier', 'Tuber', 'Golden Commando', 'Zed']);
   let presetActive = false;
 
   function togglePreset(btn) {
