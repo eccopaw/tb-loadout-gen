@@ -3,681 +3,1732 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tower Battles — Loadout Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<title>Range Tester</title>
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #0d1117;
-    --surface: #161b22;
-    --surface2: #1c2330;
-    --border: #30363d;
-    --border-bright: #484f58;
-    --text: #e6edf3;
-    --text-muted: #7d8590;
-    --text-dim: #484f58;
-    --accent: #58a6ff;
-    --accent-dim: #1f3a5c;
-    --green: #3fb950;
-    --green-dim: #1a3a20;
-    --red: #f85149;
-    --red-dim: #3d1c1a;
-    --gold: #d29922;
-    --gold-dim: #3d2c0a;
-    --pink: #f07ab0;
-    --pink-dim: #3d1a2e;
-    --orange: #f0883e;
-    --orange-dim: #3d2010;
+    --bg: #0d0f12;
+    --surface: #141720;
+    --surface2: #1c2030;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.14);
+    --text: #e8eaf0;
+    --text2: #7a8099;
+    --text3: #4a5068;
+    --accent: #4af0b0;
+    --accent2: #4ab4f0;
+    --warn: #f0b04a;
+    --danger: #f04a6a;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
   }
 
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: 'Montserrat', sans-serif;
-    min-height: 100vh;
-    padding: 2rem 1rem 4rem;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background:
-      radial-gradient(ellipse 60% 40% at 20% 0%, rgba(88,166,255,0.06) 0%, transparent 70%),
-      radial-gradient(ellipse 40% 30% at 80% 100%, rgba(63,185,80,0.04) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  .container {
-    max-width: 760px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 1;
+    font-family: var(--sans);
+    font-weight: 300;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
   }
 
   header {
-    text-align: center;
-    margin-bottom: 2.5rem;
-    padding-bottom: 2rem;
+    padding: 18px 24px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  header h1 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  header p {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: var(--mono);
+  }
+
+  .main {
+    display: flex;
+    flex: 1;
+    gap: 0;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+
+  .sidebar {
+    width: var(--sidebar-w, 220px);
+    min-width: 140px;
+    max-width: 480px;
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    flex-shrink: 0;
+    font-size: var(--sidebar-scale, 1) * 1em;
+  }
+
+  .sidebar-resize {
+    width: 5px;
+    cursor: ew-resize;
+    background: transparent;
+    border-left: 1px solid var(--border);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+    transition: background 0.15s;
+  }
+  .sidebar-resize:hover, .sidebar-resize.dragging {
+    background: rgba(74,180,240,0.18);
+    border-left-color: var(--accent2);
+  }
+
+  .panel {
+    padding: 10px 16px;
     border-bottom: 1px solid var(--border);
   }
 
-  .eyebrow {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.2em;
-    color: var(--accent);
+  .panel-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--text3);
+    letter-spacing: 0.12em;
     text-transform: uppercase;
-    margin-bottom: 0.5rem;
+    margin-bottom: 8px;
   }
 
-  h1 {
-    font-size: clamp(28px, 6vw, 48px);
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    font-family: var(--mono);
+  }
+
+  .stat-value {
+    font-size: 13px;
+    font-family: var(--mono);
+    font-weight: 500;
     color: var(--text);
-    line-height: 1.1;
   }
 
-  h1 span {
-    color: var(--accent);
-  }
+  .stat-value.accent { color: var(--accent); }
+  .stat-value.warn   { color: var(--warn); }
+  .stat-value.blue   { color: var(--accent2); }
 
-  .tagline {
-    margin-top: 0.5rem;
-    font-size: 15px;
-    color: var(--text-muted);
-    font-weight: 400;
-  }
-
-  .section-label {
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    color: var(--text-muted);
-    text-transform: uppercase;
+  .slider-row {
     margin-bottom: 10px;
   }
 
-  .force-row {
+  .slider-row label {
     display: flex;
-    gap: 6px;
-    flex-wrap: nowrap;
-    margin-bottom: 2rem;
-  }
-
-  .force-btn {
-    padding: 8px 10px 8px 12px;
-    font-family: 'Montserrat', sans-serif;
+    justify-content: space-between;
     font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    border-radius: 6px;
-    border: 1px solid var(--border-bright);
-    background: var(--surface);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.15s;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    position: relative;
-    white-space: nowrap;
-    flex: 1;
-    justify-content: center;
+    color: var(--text2);
+    font-family: var(--mono);
+    margin-bottom: 4px;
   }
 
-  .force-btn:hover {
-    border-color: var(--accent);
-    color: var(--text);
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--surface2);
+    border-radius: 1px;
+    outline: none;
   }
 
-  .force-btn.active {
-    background: var(--accent-dim);
-    border-color: var(--accent);
-    color: var(--accent);
-  }
-
-  #btn-stall.active, #btn-stall:active {
-    background: var(--orange-dim);
-    border-color: var(--orange);
-    color: var(--orange);
-  }
-
-  #btn-cc.active, #btn-cc:active {
-    background: var(--pink-dim);
-    border-color: var(--pink);
-    color: var(--pink);
-  }
-
-  #btn-dps.active, #btn-dps:active {
-    background: var(--red-dim);
-    border-color: var(--red);
-    color: var(--red);
-  }
-
-  #btn-preset.active, #btn-preset:active {
-    background: var(--gold-dim);
-    border-color: var(--gold);
-    color: var(--gold);
-  }
-
-  .force-btn-wrap {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .info-icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    height: 18px;
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    border: 1px solid currentColor;
-    opacity: 0.5;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  button {
+    width: 100%;
+    padding: 7px 12px;
+    background: transparent;
+    border: 1px solid var(--border2);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
     font-size: 11px;
-    cursor: default;
-    flex-shrink: 0;
-    position: relative;
-    font-weight: 400;
-    letter-spacing: 0;
-    text-transform: none;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    margin-bottom: 6px;
   }
 
-  .info-icon:hover {
-    opacity: 1;
-  }
+  button:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  button.primary { border-color: var(--accent); color: var(--accent); }
+  button.primary:hover { background: rgba(74,240,176,0.08); }
+  button.danger { border-color: var(--danger); color: var(--danger); }
+  button.danger:hover { background: rgba(240,74,106,0.08); }
 
-  .info-icon:hover .tooltip {
-    display: block;
-  }
-
-  .tooltip {
-    display: none;
-    position: absolute;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--surface2);
-    border: 1px solid var(--border-bright);
-    border-radius: 6px;
-    padding: 8px 12px;
-    width: 220px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--text-muted);
-    line-height: 1.6;
-    text-transform: none;
-    letter-spacing: 0;
-    white-space: normal;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  .tooltip::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: var(--border-bright);
-  }
-
-
-
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 1.75rem 0;
-  }
-
-  .slots {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 10px;
-    margin-bottom: 1.5rem;
-  }
-
-  @media (max-width: 500px) {
-    .slots { grid-template-columns: repeat(3, 1fr); }
-  }
-
-  .slot {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px 8px;
-    text-align: center;
-    height: 90px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    transition: border-color 0.2s;
-    overflow: hidden;
-  }
-
-  .slot.farm {
-    border-color: var(--green);
-    background: var(--green-dim);
-  }
-
-  .slot.forced-support {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-  }
-
-  .slot.forced-aoe {
-    border-color: var(--orange);
-    background: var(--orange-dim);
-  }
-
-  .slot.forced-cc {
-    border-color: var(--pink);
-    background: var(--pink-dim);
-  }
-
-  .slot.forced-dps {
-    border-color: var(--red);
-    background: var(--red-dim);
-  }
-
-  .slot-tag {
-    font-family: 'Share Tech Mono', monospace;
+  .hint {
     font-size: 10px;
-    letter-spacing: 0.1em;
-    color: var(--text-dim);
-    text-transform: uppercase;
+    color: var(--text3);
+    font-family: var(--mono);
+    line-height: 1.6;
+    margin-top: 4px;
   }
 
-  .slot.farm .slot-tag { color: var(--gold); }
-  .slot.forced .slot-tag { color: var(--accent); }
+  .mode-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
 
-  .slot-name {
-    font-size: 14px;
-    font-weight: 800;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--text);
-    line-height: 1.2;
+  .mode-btn {
+    flex: 1;
+    padding: 6px 4px;
+    font-size: 10px;
+    margin-bottom: 0;
+  }
+
+  .mode-btn.active {
+    background: var(--surface2);
+    border-color: var(--accent2);
+    color: var(--accent2);
+  }
+
+  .sweep-bar {
     width: 100%;
-    white-space: nowrap;
+    height: 36px;
+    background: var(--surface2);
+    border-radius: 3px;
     overflow: hidden;
-    text-overflow: clip;
-    display: block;
+    margin-top: 8px;
+    position: relative;
   }
 
-  .generate-btn {
-    width: 100%;
-    padding: 16px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 16px;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    border-radius: 8px;
-    border: 1px solid var(--green);
-    background: var(--green-dim);
-    color: var(--green);
-    cursor: pointer;
-    transition: all 0.15s;
-    margin-bottom: 2rem;
-  }
-
-  .generate-btn:hover {
-    background: var(--green);
-    color: #0d1117;
-  }
-
-  .generate-btn:active {
-    transform: scale(0.98);
-  }
-
-  .ban-grid {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .ban-btn {
-    padding: 6px 14px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    border-radius: 5px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-
-  .ban-btn:hover {
-    border-color: var(--border-bright);
-    color: var(--text);
-  }
-
-  .ban-btn.banned {
-    background: var(--red-dim);
-    border-color: var(--red);
-    color: var(--red);
-    text-decoration: line-through;
-    opacity: 0.7;
-  }
-
-  .force-list-grid {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .force-list-btn {
-    padding: 6px 14px;
-    font-family: 'Montserrat', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
-    border-radius: 5px;
-    border: 1px solid var(--border);
-    background: var(--surface2);
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: all 0.12s;
-  }
-
-  .force-list-btn:hover {
-    border-color: var(--border-bright);
-    color: var(--text);
-  }
-
-  .force-list-btn.forced {
-    background: var(--green-dim);
-    border-color: var(--green);
-    color: var(--green);
-  }
 
   footer {
-    text-align: center;
-    margin-top: 3rem;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: 0.1em;
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 10px;
+    color: var(--text3);
+    font-family: var(--mono);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
   }
+
+  .preset-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .preset-item span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    color: var(--text);
+  }
+  .preset-item span:hover { color: var(--accent2); }
+  .preset-item button {
+    width: auto;
+    padding: 2px 6px;
+    font-size: 10px;
+    margin-bottom: 0;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  /* Progressive disclosure based on sidebar width */
+
+  /* Things hidden at small width */
+  .sb-sm .hint { display: none; }
+  .sb-sm .stat-extra { display: none; }
+  .sb-sm .panel-label { display: none; }
+
+  /* Things only visible at large width */
+  .stat-extra { display: none; }
+  .sb-lg .stat-extra { display: flex; }
+  .sb-xl .stat-extra { display: flex; }
+
+  /* Hints collapse to 2 lines at md, expand fully at lg+ */
+  .hint { overflow: hidden; max-height: 2.4em; }
+  .sb-lg .hint { max-height: none; }
+  .sb-xl .hint { max-height: none; }
+
+  /* Sweep bar taller at xl */
+
+  /* Extra detail panel only at xl */
+  .detail-panel { display: none; }
+  .sb-xl .detail-panel { display: block; }
+
+  footer span { display: flex; gap: 6px; }
+  footer b { color: var(--text2); font-weight: 500; }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <header>
-    <h1>TB <span>Loadout Generator</span></h1>
+<header>
+  <h1>Range Optimization Testing</h1>
+  <p>find where a circle maximally intersects a rectilinear polyline</p>
+</header>
 
-  </header>
-
-  <p class="section-label">Force settings</p>
-  <div class="force-row">
-    <button class="force-btn" id="btn-support" onclick="toggleForce('support', this)">
-      Force Support
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Commander, DJ</span></span>
-    </button>
-    <button class="force-btn" id="btn-stall" onclick="toggleForce('stall', this)">
-      Force Stall
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Flamethrower, Hallowboomer, Cryo-Gunner, Sleeter, Harpoon Hunter, Snowballer, Stunner, Scarecrow</span></span>
-    </button>
-    <button class="force-btn" id="btn-cc" onclick="toggleForce('cc', this)">
-      Force CC
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Aviator, Plasma Trooper, Mortar, Shotgunner, Fragger, Tuber, Flamethrower, Hallowboomer, Elf, Patrioteer, Enforcer</span></span>
-    </button>
-    <button class="force-btn" id="btn-dps" onclick="toggleForce('dps', this)">
-      Force Single DPS
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Sniper, Marksman, Tweeter, Mercenary, Barracks, Commando, Enforcer, Soldier, Golden Commando, Golden Scout, Huntsman, Harpoon Hunter, Red Sniper</span></span>
-    </button>
+<div class="main">
+  <div class="canvas-wrap">
+    <canvas id="main"></canvas>
   </div>
 
-  <div class="force-row" style="margin-top: -1.25rem;">
-    <button class="force-btn" id="btn-preset" onclick="togglePreset(this)">
-      Drafting Wars Restriction
-      <span class="info-icon" onclick="event.stopPropagation()">ⓘ<span class="tooltip">Allows only: Enforcer, Aviator, Mercenary, Patrol, Graveyard, Commando, Soldier, Mortar, Tuber, Phaser</span></span>
-    </button>
+  <div class="sidebar-resize" id="sb-resize"></div>
+  <div class="sidebar" id="sidebar">
+    <div class="panel">
+      <div class="panel-label">Mode</div>
+      <div class="mode-row">
+        <button class="mode-btn active" id="btn-move" onclick="setMode('move')">Move</button>
+        <button class="mode-btn" id="btn-add" onclick="setMode('add')">Add pt</button>
+        <button class="mode-btn" id="btn-del" onclick="setMode('del')">Del pt</button>
+      </div>
+      <div class="mode-row">
+        <button class="mode-btn" id="btn-zone" onclick="setMode('zone')" style="border-color:rgba(240,74,106,0.5);color:#f04a6a">⬛ Zone</button>
+        <button class="mode-btn" id="btn-zonedel" onclick="setMode('zonedel')" style="border-color:rgba(240,74,106,0.3);color:#c03050">✕ Erase</button>
+        <button class="mode-btn danger" onclick="clearZones()" style="flex:0.7;margin-bottom:0">All</button>
+      </div>
+      <p class="hint">Move: drag circle or path points.<br>Add pt: click path/endpoints to extend or insert.<br>Del pt: click node to remove.<br>Zone: drag to paint no-go areas.<br>Erase: click a zone to remove.<br><b>Right-click drag</b> to pan.<br><b>Ctrl+Z</b> to undo <span id="undo-count" style="color:var(--text3)"></span></p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Circle</div>
+      <div class="slider-row">
+        <label><span>Radius</span></label>
+        <input type="number" id="rad" min="0.1" max="9999" value="5" step="1" oninput="onRadChange(this.value)" style="width:100%;padding:5px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;">
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">center</span>
+        <span class="stat-value blue" id="pos">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">overlap</span>
+        <span class="stat-value accent" id="ov">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">path length</span>
+        <span class="stat-value" id="plen">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">% covered</span>
+        <span class="stat-value warn" id="pct">—</span>
+      </div>
+      <div class="stat-row stat-extra">
+        <span class="stat-label">zones</span>
+        <span class="stat-value" id="zone-count">0</span>
+      </div>
+      <div class="stat-row stat-extra">
+        <span class="stat-label">best overlap</span>
+        <span class="stat-value warn" id="best-ov">—</span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Optimize</div>
+      <button class="primary" onclick="findBest()">▶ Find best position</button>
+      <button onclick="resetPath()">Reset path</button>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Visualize</div>
+      <button id="btn-heatmap" onclick="toggleHeatmap()" style="border-color:rgba(74,240,176,0.35);color:var(--text2)">&#9635; Heatmap: Off</button>
+      <p class="hint">Green = 100% covered · Red = 0%.<br>Uses current radius. Updates live.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Import / Export</div>
+      <button onclick="exportPath()">⎘ Copy path to clipboard</button>
+      <button onclick="importPath()">⎗ Paste path from clipboard</button>
+      <p class="hint" style="color:var(--text3);margin-bottom:3px">Coords centered at (0,0) on export</p>
+      <p class="hint" id="io-status" style="min-height:14px;transition:opacity 0.4s"></p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-label">Presets</div>
+      <div style="display:flex;gap:4px;margin-bottom:8px">
+        <input type="text" id="preset-name" placeholder="preset name…" style="flex:1;padding:5px 8px;background:var(--surface2);border:1px solid var(--border2);border-radius:4px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;min-width:0">
+        <button onclick="savePreset()" style="width:auto;padding:5px 10px;margin-bottom:0;flex-shrink:0">Save</button>
+      </div>
+      <div id="preset-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      <p class="hint" id="preset-status" style="margin-top:6px;min-height:14px;transition:opacity 0.4s"></p>
+    </div>
+
+    <div class="panel detail-panel">
+      <div class="panel-label">Path nodes</div>
+      <div id="node-list" style="font-family:var(--mono);font-size:10px;color:var(--text2);line-height:1.8;max-height:160px;overflow-y:auto"></div>
+    </div>
   </div>
-
-  <hr class="divider">
-
-  <div class="slots" id="slots">
-    <div class="slot" id="slot0">
-      <span class="slot-name" id="s0">—</span>
-    </div>
-    <div class="slot" id="slot1">
-      <span class="slot-name" id="s1">—</span>
-    </div>
-    <div class="slot" id="slot2">
-      <span class="slot-name" id="s2">—</span>
-    </div>
-    <div class="slot" id="slot3">
-      <span class="slot-name" id="s3">—</span>
-    </div>
-    <div class="slot" id="slot4">
-      <span class="slot-name" id="s4">—</span>
-    </div>
-  </div>
-
-  <button class="generate-btn" onclick="generate()">⟳ Generate Loadout</button>
-
-  <hr class="divider">
-
-  <p class="section-label">Ban list — click to ban</p>
-  <div class="ban-grid" id="ban-grid"></div>
-
-  <hr class="divider">
-
-  <p class="section-label">Force list — click to force</p>
-  <div class="force-list-grid" id="force-list-grid"></div>
-
-
-
 </div>
+
+<footer>
+  <span><b>drag</b> circle/nodes</span>
+  <span><b>scroll</b> to zoom</span>
+  <span><b>right-click drag</b> or <b>middle-drag</b> or <b>space+drag</b> to pan</span>
+  <span><b>zone mode</b> drag to draw exclusion zones</span>
+</footer>
+
 <script>
-  const ALL_TOWERS = [
-    'DJ', 'Commander', 'Aviator', 'Phaser', 'Marksman', 'Anarchist',
-    'Tweeter', 'Plasma Trooper', 'Mercenary', 'Mortar', 'Barracks', 'Patrol',
-    'Commando', 'Cryo-Gunner', 'Railgunner', 'Enforcer', 'Shotgunner', 'Soldier',
-    'Fragger', 'Flamethrower', 'Golden Scout', 'Golden Commando', 'Hallowboomer', 'Tuber',
-    'Zed', 'Graveyard'
+const canvas = document.getElementById('main');
+const ctx = canvas.getContext('2d');
+
+let W, H;
+let dpr = window.devicePixelRatio || 1;
+let GRID = 1;
+
+// Pan / zoom
+let panX = 0, panY = 0, zoom = 0.6;
+
+function toWorld(sx, sy) {
+  return { x: (sx - panX) / zoom, y: (sy - panY) / zoom };
+}
+function toScreen(wx, wy) {
+  return { x: wx * zoom + panX, y: wy * zoom + panY };
+}
+
+function snapGrid(x, y) {
+  return {
+    x: Math.round(x / GRID) * GRID,
+    y: Math.round(y / GRID) * GRID
+  };
+}
+
+function resize() {
+  const wrap = canvas.parentElement;
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!resizeDone) { resizeDone = true; loadPreset('midnight road'); } else { draw(); }
+}
+
+let resizeDone = false;
+
+window.addEventListener('resize', resize);
+
+// --- State ---
+let pts = [];
+// pts and circle stored as direct world coords (small pixel values)
+let circle = {x: 30, y: 50};
+let radius = 5;
+let bestPos = null;
+let mode = 'move';
+let dragging = null;
+let dragStartWorld = null;
+let dragDelta = null;
+let animFrame = null;
+// Heatmap
+let heatmapOn = false;
+let heatmapDirty = true;
+let heatmapImageData = null;
+
+// Exclusion zones: array of {x1,y1,x2,y2} in world coords (axis-aligned rects)
+let zones = [];
+let zoneDrag = null;
+
+function worldArr() { return pts.map(p => ({x: p.x, y: p.y})); }
+function wcx() { return circle.x; }
+function wcy() { return circle.y; }
+
+function pxArr() { return pts.map(p => toScreen(p.x, p.y)); }
+function cx() { return toScreen(circle.x, circle.y).x; }
+function cy() { return toScreen(circle.x, circle.y).y; }
+function cr() { return radius * zoom; }
+function wr() { return radius; }
+
+// --- Geometry ---
+function segOverlap(p1, p2, ox, oy, r) {
+  const dx = p2.x - p1.x, dy = p2.y - p1.y;
+  const len = Math.hypot(dx, dy);
+  if (len < 0.5) return 0;
+  const ux = dx/len, uy = dy/len;
+  const fx = p1.x - ox, fy = p1.y - oy;
+  const b = 2*(fx*ux + fy*uy);
+  const c2 = fx*fx + fy*fy - r*r;
+  const disc = b*b - 4*c2;
+  if (disc < 0) return 0;
+  const sq = Math.sqrt(disc);
+  const t0 = Math.max(0, (-b - sq) / 2);
+  const t1 = Math.min(len, (-b + sq) / 2);
+  return Math.max(0, t1 - t0);
+}
+
+function totalOverlap(ox, oy, r) {
+  const ap = worldArr();
+  let s = 0;
+  for (let i = 0; i < ap.length - 1; i++) s += segOverlap(ap[i], ap[i+1], ox, oy, r);
+  return s;
+}
+
+function pathLength() {
+  const ap = worldArr();
+  let l = 0;
+  for (let i = 0; i < ap.length - 1; i++) l += Math.hypot(ap[i+1].x-ap[i].x, ap[i+1].y-ap[i].y);
+  return l;
+}
+
+// Intersecting chord endpoints for drawing
+function segChords(p1, p2, ox, oy, r) {
+  const dx = p2.x-p1.x, dy = p2.y-p1.y;
+  const len = Math.hypot(dx,dy);
+  if (len < 0.5) return null;
+  const ux = dx/len, uy = dy/len;
+  const fx = p1.x-ox, fy = p1.y-oy;
+  const b = 2*(fx*ux+fy*uy);
+  const c2 = fx*fx+fy*fy-r*r;
+  const disc = b*b-4*c2;
+  if (disc < 0) return null;
+  const sq = Math.sqrt(disc);
+  const t0 = Math.max(0,(-b-sq)/2), t1 = Math.min(len,(-b+sq)/2);
+  if (t1 <= t0) return null;
+  return [
+    {x: p1.x+ux*t0, y: p1.y+uy*t0},
+    {x: p1.x+ux*t1, y: p1.y+uy*t1}
   ];
+}
 
-  const DEFAULT_BANNED = new Set([
-    'Huntsman', 'Elf', 'Sleeter', 'Harpoon Hunter', 'Snowballer',
-    'Ice Cream', 'Stunner', 'Patrioteer', 'Scarecrow', 'Sniper', 'Red Sniper'
-  ]);
+// --- Helpers ---
+function centeredCoords() {
+  const ap = worldArr();
+  if (!ap.length) return [];
+  const xs = ap.map(p => p.x), ys = ap.map(p => p.y);
+  const cx0 = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy0 = (Math.min(...ys) + Math.max(...ys)) / 2;
+  return ap.map(p => [Math.round(p.x - cx0), Math.round(p.y - cy0)]);
+}
 
-  const ALL_TOWERS_FULL = [
-    'Farm',
-    ...ALL_TOWERS,
-    'Huntsman', 'Elf', 'Sleeter', 'Harpoon Hunter', 'Snowballer',
-    'Ice Cream', 'Stunner', 'Patrioteer', 'Scarecrow', 'Sniper', 'Red Sniper'
+// --- Heatmap ---
+// Heatmap: two-pass async computation.
+// Pass 1 — collect raw overlap values for every cell.
+// Pass 2 — find min/max across all cells, then color-map relative to that range
+//          so the best cell is always bright green and the worst is always red.
+let heatmapJob = null;
+
+function heatmapColor(t) {
+  // t = 0 (worst) → red … t = 1 (best) → pink
+  // Stops (t → [r,g,b]):
+  //   0.00 → red        [220, 30,  30 ]
+  //   0.25 → orange     [230, 120, 20 ]
+  //   0.50 → yellow     [210, 200, 20 ]
+  //   0.70 → green      [40,  200, 60 ]
+  //   0.85 → blue       [50,  120, 230]
+  //   1.00 → pink       [240, 80,  200]
+  const stops = [
+    [0.00, 220, 30,  30 ],
+    [0.25, 230, 120, 20 ],
+    [0.50, 210, 200, 20 ],
+    [0.70, 40,  200, 60 ],
+    [0.85, 50,  120, 230],
+    [1.00, 240, 80,  200],
   ];
+  // Find surrounding stops and lerp
+  let lo = stops[0], hi = stops[stops.length - 1];
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (t >= stops[i][0] && t <= stops[i+1][0]) { lo = stops[i]; hi = stops[i+1]; break; }
+  }
+  const range = hi[0] - lo[0];
+  const f = range < 0.0001 ? 0 : (t - lo[0]) / range;
+  const rr = Math.round(lo[1] + (hi[1] - lo[1]) * f);
+  const gg = Math.round(lo[2] + (hi[2] - lo[2]) * f);
+  const bb = Math.round(lo[3] + (hi[3] - lo[3]) * f);
+  return [rr, gg, bb, 170];
+}
 
-  const POOL = [...ALL_TOWERS_FULL];
-  const SUPPORT = ['Commander', 'DJ'];
-  const STALL = ['Flamethrower', 'Hallowboomer', 'Cryo-Gunner', 'Sleeter', 'Harpoon Hunter', 'Snowballer', 'Stunner', 'Scarecrow'];
-  const CC = ['Aviator', 'Plasma Trooper', 'Mortar', 'Shotgunner', 'Fragger', 'Tuber', 'Flamethrower', 'Hallowboomer', 'Elf', 'Patrioteer'];
-  const DPS = ['Sniper', 'Marksman', 'Tweeter', 'Mercenary', 'Commando', 'Enforcer', 'Soldier', 'Golden Commando', 'Golden Scout', 'Huntsman', 'Harpoon Hunter', 'Red Sniper'];
+function startHeatmapJob() {
+  if (heatmapJob) { heatmapJob.cancelled = true; }
 
-  const forced = { support: false, stall: false, cc: false, dps: false };
-  const banned = new Set(DEFAULT_BANNED);
-  const forceList = new Set(['Farm']);
+  const r  = wr();
+  const pl = pathLength();
+  if (pl < 0.001) { heatmapImageData = null; heatmapDirty = false; return; }
 
-  const PRESET_ALLOWED = new Set(['Enforcer', 'Aviator', 'Mercenary', 'Patrol', 'Graveyard', 'Commando', 'Soldier', 'Mortar', 'Tuber', 'Phaser']);
-  let presetActive = false;
+  const PW   = Math.round(W * dpr);
+  const PH   = Math.round(H * dpr);
+  const CELL = Math.max(4, Math.round(dpr * 8));
+  const cols = Math.ceil(PW / CELL);
+  const rows = Math.ceil(PH / CELL);
 
-  function togglePreset(btn) {
-    presetActive = !presetActive;
-    btn.classList.toggle('active', presetActive);
+  // Snapshot geometry at job-start so pan/zoom mid-flight doesn't corrupt coords
+  const snapPanX = panX, snapPanY = panY, snapZoom = zoom;
+  function snapToWorld(sx, sy) {
+    return { x: (sx - snapPanX) / snapZoom, y: (sy - snapPanY) / snapZoom };
+  }
 
-    const banBtns = document.querySelectorAll('.ban-btn');
-    banBtns.forEach(b => {
-      const tower = b.textContent.trim();
-      if (presetActive) {
-        if (!PRESET_ALLOWED.has(tower)) {
-          banned.add(tower);
-          b.classList.add('banned');
-        } else {
-          banned.delete(tower);
-          b.classList.remove('banned');
-        }
-      } else {
-        // Restore to default banned state
-        if (DEFAULT_BANNED.has(tower)) {
-          banned.add(tower);
-          b.classList.add('banned');
-        } else {
-          banned.delete(tower);
-          b.classList.remove('banned');
+  // Pass 1: raw overlap values per cell
+  const ovValues = new Float32Array(cols * rows);
+  const job = { cancelled: false, pass: 1, row: 0, cols, rows, CELL, PW, PH, r, ovValues };
+  heatmapJob = job;
+  heatmapDirty = false;
+
+  const ROWS_PER_FRAME = Math.max(1, Math.ceil(rows / 30));
+
+  function tickPass1() {
+    if (job.cancelled) return;
+    const endRow = Math.min(job.row + ROWS_PER_FRAME, rows);
+    for (let row = job.row; row < endRow; row++) {
+      for (let col = 0; col < cols; col++) {
+        const sx = (col * CELL + CELL * 0.5) / dpr;
+        const sy = (row * CELL + CELL * 0.5) / dpr;
+        const { x: wx, y: wy } = snapToWorld(sx, sy);
+        ovValues[row * cols + col] = totalOverlap(wx, wy, r);
+      }
+    }
+    job.row = endRow;
+    if (job.row < rows) { requestAnimationFrame(tickPass1); }
+    else                { requestAnimationFrame(tickPass2); }
+  }
+
+  function tickPass2() {
+    if (job.cancelled) return;
+    // Find actual min/max so the colour scale spans the real data range
+    let minOv = Infinity, maxOv = -Infinity;
+    for (let i = 0; i < ovValues.length; i++) {
+      if (ovValues[i] < minOv) minOv = ovValues[i];
+      if (ovValues[i] > maxOv) maxOv = ovValues[i];
+    }
+    const range = maxOv - minOv || 1;
+
+    const imgData = new ImageData(PW, PH);
+    const data    = imgData.data;
+
+    for (let row = 0; row < rows; row++) {
+      for (let col = 0; col < cols; col++) {
+        const t = (ovValues[row * cols + col] - minOv) / range; // 0=worst, 1=best
+        const [rr, gg, bb, alpha] = heatmapColor(t);
+        const x0 = col * CELL, y0 = row * CELL;
+        const x1 = Math.min(x0 + CELL, PW), y1 = Math.min(y0 + CELL, PH);
+        for (let py = y0; py < y1; py++) {
+          const base = py * PW;
+          for (let px = x0; px < x1; px++) {
+            const idx = (base + px) * 4;
+            data[idx]   = rr; data[idx+1] = gg;
+            data[idx+2] = bb; data[idx+3] = alpha;
+          }
         }
       }
-    });
-  }
-
-  function toggleForce(group, btn) {
-    forced[group] = !forced[group];
-    btn.classList.toggle('active', forced[group]);
-  }
-
-  function shuffle(arr) {
-    const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [a[i], a[j]] = [a[j], a[i]];
     }
-    return a;
+
+    // Store min/max so the legend can show real percentages
+    job.minPct = minOv / pl * 100;
+    job.maxPct = maxOv / pl * 100;
+    heatmapImageData = imgData;
+    heatmapMinPct = job.minPct;
+    heatmapMaxPct = job.maxPct;
+    heatmapJob = null;
+    draw();
   }
 
-  function pickFrom(pool) {
-    const available = pool.filter(t => !banned.has(t));
-    return available.length ? shuffle(available)[0] : null;
+  requestAnimationFrame(tickPass1);
+}
+
+let heatmapMinPct = 0, heatmapMaxPct = 100;
+
+function renderHeatmap() {
+  if (heatmapDirty) {
+    heatmapDirty = false;
+    startHeatmapJob();
   }
 
-  function fitSlotText(el) {
-    const words = el.textContent.trim().split(' ');
-    if (words.length >= 2) {
-      el.style.fontSize = '14px';
-      el.style.whiteSpace = 'normal';
-      el.style.wordBreak = 'break-word';
+  if (!heatmapImageData) {
+    // Show a "computing…" label while pass 1 runs
+    ctx.font = '400 10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'left';
+    ctx.fillText('heatmap computing…', 14, H - 14);
+    return;
+  }
+
+  // Blit (putImageData bypasses the dpr transform)
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.putImageData(heatmapImageData, 0, 0);
+  ctx.restore();
+
+  // Legend bar with actual min/max labels
+  const lw = 90, lh = 9, lx = 14, ly = H - 26;
+  for (let i = 0; i < lw; i++) {
+    const [rr, gg, bb] = heatmapColor(i / lw);
+    ctx.fillStyle = `rgb(${rr},${gg},${bb})`;
+    ctx.fillRect(lx + i, ly, 1, lh);
+  }
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(lx, ly, lw, lh);
+  ctx.font = '400 9px "IBM Plex Mono", monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.45)';
+  ctx.textAlign = 'left';
+  ctx.fillText(heatmapMinPct.toFixed(1) + '%', lx, ly + lh + 10);
+  ctx.textAlign = 'right';
+  ctx.fillText(heatmapMaxPct.toFixed(1) + '%', lx + lw, ly + lh + 10);
+  ctx.textAlign = 'left';
+}
+
+function toggleHeatmap() {
+  heatmapOn = !heatmapOn;
+  heatmapDirty = true;
+  const btn = document.getElementById('btn-heatmap');
+  if (heatmapOn) {
+    btn.textContent = '⬛ Heatmap: On';
+    btn.style.borderColor = 'var(--accent)';
+    btn.style.color = 'var(--accent)';
+  } else {
+    btn.textContent = '⬛ Heatmap: Off';
+    btn.style.borderColor = 'rgba(74,240,176,0.35)';
+    btn.style.color = 'var(--text2)';
+  }
+  draw();
+}
+
+function invalidateHeatmap() {
+  heatmapDirty = true;
+  heatmapImageData = null;
+  if (heatmapJob) { heatmapJob.cancelled = true; heatmapJob = null; }
+}
+
+// --- Optimize ---
+function findBest() {
+  const r = wr();
+  let best = -1, bx = wcx(), by = wcy();
+
+  const ap = worldArr();
+
+  // Build segment list
+  let cumLen = 0;
+  const segs = [];
+  for (let i = 0; i < ap.length - 1; i++) {
+    const l = Math.hypot(ap[i+1].x - ap[i].x, ap[i+1].y - ap[i].y);
+    segs.push({ p1: ap[i], p2: ap[i+1], len: l });
+    cumLen += l;
+  }
+
+  function tryPt(ox, oy) {
+    if (circleInAnyZone(ox, oy)) return; // skip excluded positions
+    const ov = totalOverlap(ox, oy, r);
+    if (ov > best) { best = ov; bx = ox; by = oy; }
+  }
+
+  // Walk arc-length t along path, returning {x,y}
+  function pathPt(t) {
+    let rem = t;
+    for (const seg of segs) {
+      if (rem <= seg.len + 0.001) {
+        const frac = Math.min(rem / Math.max(seg.len, 0.001), 1);
+        return { x: seg.p1.x + (seg.p2.x - seg.p1.x) * frac,
+                 y: seg.p1.y + (seg.p2.y - seg.p1.y) * frac,
+                 seg };
+      }
+      rem -= seg.len;
+    }
+    return { x: ap[ap.length-1].x, y: ap[ap.length-1].y, seg: segs[segs.length-1] };
+  }
+
+  // 1. Dense on-path samples (~every 2px)
+  const PATH_STEPS = Math.max(300, Math.ceil(cumLen / 2));
+  for (let s = 0; s <= PATH_STEPS; s++) {
+    const { x, y } = pathPt((s / PATH_STEPS) * cumLen);
+    tryPt(x, y);
+  }
+
+  // 2. Perpendicular sweeps from every point along path (both sides, fine increments)
+  const PERP_STEPS = Math.max(400, Math.ceil(cumLen / 1.5));
+  for (let s = 0; s <= PERP_STEPS; s++) {
+    const { x, y, seg } = pathPt((s / PERP_STEPS) * cumLen);
+    const dx = seg.p2.x - seg.p1.x, dy = seg.p2.y - seg.p1.y;
+    const len = Math.hypot(dx, dy) || 1;
+    const nx = -dy / len, ny = dx / len;
+    for (let d = r * 0.04; d <= r * 1.02; d += r * 0.04) {
+      tryPt(x + nx * d, y + ny * d);
+      tryPt(x - nx * d, y - ny * d);
+    }
+  }
+
+  // 3. All-angle radial fan from every path node (corner sweet-spots)
+  for (const pt of ap) {
+    for (let angle = 0; angle < Math.PI * 2; angle += Math.PI / 32) {
+      for (let dist = r * 0.05; dist <= r * 1.05; dist += r * 0.05) {
+        tryPt(pt.x + Math.cos(angle) * dist, pt.y + Math.sin(angle) * dist);
+      }
+    }
+  }
+
+  // 4. Gradient-ascent refinement from best candidate
+  let stepSize = r * 0.5;
+  while (stepSize > 0.25) {
+    let moved = false;
+    for (const [ddx, ddy] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+      const nx = bx + ddx * stepSize, ny = by + ddy * stepSize;
+      if (circleInAnyZone(nx, ny)) continue;
+      const ov = totalOverlap(nx, ny, r);
+      if (ov > best) { best = ov; bx = nx; by = ny; moved = true; break; }
+    }
+    if (!moved) stepSize *= 0.5;
+  }
+
+  bestPos = {x: bx, y: by, ov: best};
+
+  // Animate to best (world coords)
+  const startX = wcx(), startY = wcy();
+  let start = null;
+  if (animFrame) cancelAnimationFrame(animFrame);
+  function step(ts) {
+    if (!start) start = ts;
+    const f = Math.min((ts-start)/600, 1);
+    const ease = f < 0.5 ? 2*f*f : 1-Math.pow(-2*f+2,2)/2;
+    circle.x = startX + (bx-startX)*ease;
+    circle.y = startY + (by-startY)*ease;
+    draw();
+    if (f < 1) animFrame = requestAnimationFrame(step);
+  }
+  animFrame = requestAnimationFrame(step);
+}
+
+function clearBest() { pushUndo(); bestPos = null; draw(); }
+
+function fitView() {
+  if (!pts.length) return;
+  const wa = worldArr();
+  const xs = wa.map(p => p.x), ys = wa.map(p => p.y);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const pad = 40;
+  const pathW = maxX - minX || 1, pathH = maxY - minY || 1;
+  zoom = Math.min((W - pad*2) / pathW, (H - pad*2) / pathH);
+  panX = (W - pathW * zoom) / 2 - minX * zoom;
+  panY = (H - pathH * zoom) / 2 - minY * zoom;
+}
+
+function resetPath() {
+  pushUndo();
+  pts = [
+    {x: -10, y: 0},
+    {x:  10, y: 0},
+  ];
+  circle = { x: pts[0].x, y: pts[0].y };
+  bestPos = null;
+  fitView();
+  draw();
+}
+
+// --- Drawing ---
+// Polyfill for ctx.roundRect (not available in all engines)
+function roundRect(ctx2, x, y, w, h, rad) {
+  rad = Math.min(rad, w/2, h/2);
+  ctx2.beginPath();
+  ctx2.moveTo(x + rad, y);
+  ctx2.lineTo(x + w - rad, y);
+  ctx2.arcTo(x + w, y, x + w, y + rad, rad);
+  ctx2.lineTo(x + w, y + h - rad);
+  ctx2.arcTo(x + w, y + h, x + w - rad, y + h, rad);
+  ctx2.lineTo(x + rad, y + h);
+  ctx2.arcTo(x, y + h, x, y + h - rad, rad);
+  ctx2.lineTo(x, y + rad);
+  ctx2.arcTo(x, y, x + rad, y, rad);
+  ctx2.closePath();
+}
+
+function draw() {
+  ctx.clearRect(0,0,W,H);
+
+  const ap = pxArr();       // screen positions
+  const wa = worldArr();    // world positions
+  const ocx = cx(), ocy = cy(), r = cr(); // screen circle
+  const wox = wcx(), woy = wcy();         // world circle center
+
+  // Heatmap (drawn beneath everything)
+  if (heatmapOn) renderHeatmap();
+
+  // Background grid (account for pan/zoom)
+  const gridScreen = GRID * zoom;
+  const offsetX = ((panX % gridScreen) + gridScreen) % gridScreen;
+  const offsetY = ((panY % gridScreen) + gridScreen) % gridScreen;
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  for (let x = offsetX; x < W; x += gridScreen) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+  for (let y = offsetY; y < H; y += gridScreen) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+  const ov = totalOverlap(wox, woy, wr());
+  const inZone = circleInAnyZone(wox, woy);
+
+  // Draw exclusion zones
+  for (const z of zones) {
+    const s1 = toScreen(Math.min(z.x1,z.x2), Math.min(z.y1,z.y2));
+    const s2 = toScreen(Math.max(z.x1,z.x2), Math.max(z.y1,z.y2));
+    const sw2 = s2.x - s1.x, sh2 = s2.y - s1.y;
+    ctx.fillStyle = 'rgba(240,74,106,0.13)';
+    ctx.fillRect(s1.x, s1.y, sw2, sh2);
+    ctx.strokeStyle = 'rgba(240,74,106,0.55)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4,3]);
+    ctx.strokeRect(s1.x, s1.y, sw2, sh2);
+    ctx.setLineDash([]);
+  }
+
+  // Draw zone being dragged
+  if (zoneDrag) {
+    const s1 = toScreen(Math.min(zoneDrag.wx, zoneDrag.cx), Math.min(zoneDrag.wy, zoneDrag.cy));
+    const s2 = toScreen(Math.max(zoneDrag.wx, zoneDrag.cx), Math.max(zoneDrag.wy, zoneDrag.cy));
+    ctx.fillStyle = 'rgba(240,74,106,0.18)';
+    ctx.fillRect(s1.x, s1.y, s2.x-s1.x, s2.y-s1.y);
+    ctx.strokeStyle = 'rgba(240,74,106,0.8)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4,3]);
+    ctx.strokeRect(s1.x, s1.y, s2.x-s1.x, s2.y-s1.y);
+    ctx.setLineDash([]);
+  }
+
+  // Draw highlighted overlap segments (world space geometry → screen coords)
+  ctx.lineCap = 'round';
+  for (let i = 0; i < wa.length-1; i++) {
+    const chord = segChords(wa[i], wa[i+1], wox, woy, wr());
+    if (!chord) continue;
+    const s0 = toScreen(chord[0].x, chord[0].y);
+    const s1 = toScreen(chord[1].x, chord[1].y);
+    ctx.strokeStyle = '#4af0b0';
+    ctx.lineWidth = 5;
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.moveTo(s0.x, s0.y);
+    ctx.lineTo(s1.x, s1.y);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  // Draw polyline
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.moveTo(ap[0].x, ap[0].y);
+  for (let i = 1; i < ap.length; i++) ctx.lineTo(ap[i].x, ap[i].y);
+  ctx.stroke();
+
+  // Path endpoints
+  ctx.fillStyle = 'rgba(255,255,255,0.5)';
+  ctx.beginPath(); ctx.arc(ap[0].x, ap[0].y, 4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(ap[ap.length-1].x, ap[ap.length-1].y, 4, 0, Math.PI*2); ctx.fill();
+
+  // Corner nodes
+  for (let i = 1; i < ap.length-1; i++) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillStyle = '#0d0f12';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(ap[i].x, ap[i].y, 5, 0, Math.PI*2);
+    ctx.fill(); ctx.stroke();
+  }
+
+  // Segment length labels in move mode
+  if (mode === 'move') {
+    ctx.font = '400 10px "IBM Plex Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < wa.length - 1; i++) {
+      const segLen = Math.hypot(wa[i+1].x - wa[i].x, wa[i+1].y - wa[i].y);
+      const label = segLen.toFixed(1);
+      // midpoint screen
+      const mx = (ap[i].x + ap[i+1].x) / 2;
+      const my = (ap[i].y + ap[i+1].y) / 2;
+      // perpendicular offset (always render label on one side)
+      const sdx = ap[i+1].x - ap[i].x, sdy = ap[i+1].y - ap[i].y;
+      const slen = Math.hypot(sdx, sdy) || 1;
+      const nx = -sdy / slen, ny = sdx / slen;
+      const off = 13;
+      const lx = mx + nx * off, ly = my + ny * off;
+      // only show when segment is long enough on screen to be readable
+      const screenLen = Math.hypot(ap[i+1].x - ap[i].x, ap[i+1].y - ap[i].y);
+      if (screenLen < 30) continue;
+      const tw = ctx.measureText(label).width;
+      ctx.globalAlpha = Math.min(1, (screenLen - 30) / 40);
+      ctx.fillStyle = 'rgba(13,15,18,0.78)';
+      roundRect(ctx, lx - tw/2 - 4, ly - 8, tw + 8, 13, 3);
+      ctx.fill();
+      ctx.fillStyle = '#7a8099';
+      ctx.fillText(label, lx, ly + 2);
+    }
+    ctx.globalAlpha = 1;
+    ctx.textAlign = 'left';
+  }
+
+  // Best position ring (bestPos stored in world coords)
+  if (bestPos) {
+    const bs = toScreen(bestPos.x, bestPos.y);
+    ctx.strokeStyle = '#f0b04a';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5,4]);
+    ctx.beginPath();
+    ctx.arc(bs.x, bs.y, r, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#f0b04a';
+    ctx.globalAlpha = 0.6;
+    ctx.beginPath(); ctx.arc(bs.x, bs.y, 3, 0, Math.PI*2); ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.font = '500 10px "IBM Plex Mono", monospace';
+    ctx.fillStyle = '#f0b04a';
+    ctx.fillText('best', bs.x + r + 8, bs.y + 4);
+  }
+
+  // Circle fill — red tint if in exclusion zone
+  ctx.beginPath();
+  ctx.arc(ocx, ocy, r, 0, Math.PI*2);
+  const grad = ctx.createRadialGradient(ocx, ocy, 0, ocx, ocy, r);
+  if (inZone) {
+    grad.addColorStop(0, 'rgba(240,74,106,0.18)');
+    grad.addColorStop(1, 'rgba(240,74,106,0.07)');
+  } else {
+    grad.addColorStop(0, 'rgba(74,180,240,0.10)');
+    grad.addColorStop(1, 'rgba(74,180,240,0.04)');
+  }
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Circle stroke
+  ctx.strokeStyle = inZone ? '#f04a6a' : '#4ab4f0';
+  ctx.lineWidth = inZone ? 2 : 1.5;
+  ctx.setLineDash([]);
+  ctx.beginPath();
+  ctx.arc(ocx, ocy, r, 0, Math.PI*2);
+  ctx.stroke();
+
+  // Circle center dot
+  ctx.fillStyle = inZone ? '#f04a6a' : '#4ab4f0';
+  ctx.beginPath(); ctx.arc(ocx, ocy, 3, 0, Math.PI*2); ctx.fill();
+
+  // Radius drag handle (east edge)
+  const rhx = ocx + r, rhy = ocy;
+  const isHoveringHandle = dragging && dragging.type === 'radius';
+  ctx.fillStyle = isHoveringHandle ? '#f0b04a' : '#4ab4f0';
+  ctx.strokeStyle = '#0d0f12';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  const hs = isHoveringHandle ? 6 : 5;
+  ctx.rect(rhx - hs/2, rhy - hs/2, hs, hs);
+  ctx.fill();
+  ctx.stroke();
+  // Dashed radius line when dragging handle
+  if (isHoveringHandle) {
+    ctx.strokeStyle = 'rgba(240,176,74,0.5)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(ocx, ocy); ctx.lineTo(rhx, rhy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Overlap label near circle
+  const labelX = ocx + r + 12, labelY = ocy - 6;
+  const pl2 = pathLength();
+  const pct2 = pl2 > 0 ? (ov / pl2 * 100) : 0;
+  ctx.font = '400 11px "IBM Plex Mono", monospace';
+  ctx.fillStyle = '#4ab4f0';
+  ctx.fillText(`range=${radius.toFixed(1)}`, labelX, labelY);
+  ctx.fillStyle = '#4af0b0';
+  ctx.fillText(`coverage=${ov.toFixed(1)} studs`, labelX, labelY + 14);
+  ctx.fillStyle = '#f0b04a';
+  ctx.fillText(`${pct2.toFixed(1)}% covered`, labelX, labelY + 28);
+
+  // Snap crosshair while dragging node
+  if (dragging && dragging.type === 'node') {
+    const dp = pxArr()[dragging.idx];
+    const R = 7;
+    ctx.strokeStyle = 'rgba(74,240,176,0.7)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(dp.x - R, dp.y); ctx.lineTo(dp.x + R, dp.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(dp.x, dp.y - R); ctx.lineTo(dp.x, dp.y + R); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.strokeStyle = 'rgba(74,240,176,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(dp.x, dp.y, R + 3, 0, Math.PI*2); ctx.stroke();
+  }
+
+  // Delta label while dragging
+  if (dragging && dragDelta && (Math.abs(dragDelta.dx) > 0.5 || Math.abs(dragDelta.dy) > 0.5)) {
+    let labelAnchor;
+    if (dragging === 'circle') {
+      labelAnchor = { x: ocx, y: ocy };
     } else {
-      el.style.whiteSpace = 'nowrap';
-      el.style.wordBreak = 'normal';
-      let size = 14;
-      el.style.fontSize = size + 'px';
-      while (el.scrollWidth > el.offsetWidth && size > 7) {
-        size -= 0.5;
-        el.style.fontSize = size + 'px';
-      }
+      const dp = pxArr()[dragging.idx];
+      labelAnchor = { x: dp.x, y: dp.y };
+    }
+    const dx = Math.round(dragDelta.dx), dy = Math.round(dragDelta.dy);
+    const sign = n => n >= 0 ? '+' + n : '' + n;
+    const label = `Δ${sign(dx)}, ${sign(dy)} px`;
+    ctx.font = '500 11px "IBM Plex Mono", monospace';
+    const metrics = ctx.measureText(label);
+    const pad = 6, lh = 16;
+    const lx = labelAnchor.x + 14;
+    const ly = labelAnchor.y - 22;
+    ctx.fillStyle = 'rgba(13,15,18,0.85)';
+    roundRect(ctx, lx - pad, ly - lh + 3, metrics.width + pad * 2, lh + 4, 3);
+    ctx.fill();
+    ctx.fillStyle = '#f0b04a';
+    ctx.fillText(label, lx, ly);
+  }
+
+  // Update stats (world coords)
+  document.getElementById('pos').textContent = `${Math.round(wox)}, ${Math.round(woy)}`;
+  document.getElementById('ov').textContent = ov.toFixed(1) + ' studs';
+  const pl = pathLength();
+  document.getElementById('plen').textContent = Math.round(pl) + ' studs';
+  document.getElementById('pct').textContent = pl > 0 ? (ov/pl*100).toFixed(1) + '%' : '—';
+  const undoEl = document.getElementById('undo-count');
+  if (undoEl) undoEl.textContent = undoStack.length ? `(${undoStack.length})` : '';
+
+  // Highlight endpoints in add mode
+  if (mode === 'add' && ap.length >= 2) {
+    for (const ep of [ap[0], ap[ap.length-1]]) {
+      ctx.strokeStyle = '#4af0b0';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3,2]);
+      ctx.beginPath(); ctx.arc(ep.x, ep.y, 8 / zoom * zoom, 0, Math.PI*2); ctx.stroke();
+      ctx.setLineDash([]);
     }
   }
 
-  function generate() {
-    const forcedListPicks = new Set();
-    let forcedSupport = null, forcedStall = null, forcedCC = null, forcedDPS = null;
-    const forcedNonFarm = [];
+}
 
-    if (forced.support) {
-      const pick = pickFrom(SUPPORT);
-      if (pick) { forcedNonFarm.push(pick); forcedSupport = pick; }
-    }
-    if (forced.stall) {
-      const pick = pickFrom(STALL.filter(t => !forcedNonFarm.includes(t)));
-      if (pick) { forcedNonFarm.push(pick); forcedStall = pick; }
-    }
-    if (forced.cc) {
-      const pick = pickFrom(CC.filter(t => !forcedNonFarm.includes(t)));
-      if (pick) { forcedNonFarm.push(pick); forcedCC = pick; }
-    }
-    if (forced.dps) {
-      const pick = pickFrom(DPS.filter(t => !forcedNonFarm.includes(t)));
-      if (pick) { forcedNonFarm.push(pick); forcedDPS = pick; }
-    }
+// --- Undo ---
+const undoStack = [];
+const MAX_UNDO = 50;
 
-    // Other force list picks (excluding Farm)
-    for (const t of forceList) {
-      if (t === 'Farm') continue;
-      if (!forcedNonFarm.includes(t) && forcedNonFarm.length < 4) {
-        forcedNonFarm.push(t);
-        forcedListPicks.add(t);
-      }
+function pushUndo() {
+  undoStack.push({
+    pts: pts.map(p => ({...p})),
+    circle: {...circle},
+    radius,
+    zones: zones.map(z => ({...z})),
+    bestPos: bestPos ? {...bestPos} : null,
+  });
+  if (undoStack.length > MAX_UNDO) undoStack.shift();
+}
+
+function undo() {
+  if (!undoStack.length) return;
+  const state = undoStack.pop();
+  pts = state.pts;
+  circle = state.circle;
+  radius = state.radius;
+  zones = state.zones;
+  bestPos = state.bestPos;
+  document.getElementById('rad').value = radius;
+  invalidateHeatmap();
+  draw();
+}
+
+// --- Interaction ---
+function setMode(m) {
+  mode = m;
+  ['move','add','del','zone','zonedel'].forEach(n => {
+    const b = document.getElementById('btn-'+n);
+    if (b) b.classList.toggle('active', n===m);
+  });
+  const cursors = { move:'crosshair', add:'cell', del:'not-allowed', zone:'crosshair', zonedel:'pointer' };
+  canvas.style.cursor = cursors[m] || 'crosshair';
+}
+
+function clearZones() { pushUndo(); zones = []; bestPos = null; draw(); }
+
+// Hover cursor update for radius handle
+canvas.addEventListener('mousemove', e => {
+  if (dragging || zoneDrag || panning || spaceDown || mode !== 'move') return;
+  const {x, y} = getLogical(e);
+  canvas.style.cursor = hitRadiusHandle(x, y) ? 'ew-resize' : 'crosshair';
+});
+
+function getLogical(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = W / r.width, scaleY = H / r.height;
+  const src = e.touches ? e.touches[0] : e;
+  const sx = (src.clientX - r.left) * scaleX;
+  const sy = (src.clientY - r.top) * scaleY;
+  return toWorld(sx, sy);
+}
+
+function getScreen(e) {
+  const r = canvas.getBoundingClientRect();
+  const scaleX = W / r.width, scaleY = H / r.height;
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - r.left) * scaleX, y: (src.clientY - r.top) * scaleY };
+}
+
+function hitCircle(lx, ly) {
+  return Math.hypot(lx - wcx(), ly - wcy()) < Math.max(radius, 16 / zoom);
+}
+
+// Returns true when cursor is near the radius drag handle (east edge of circle)
+function hitRadiusHandle(lx, ly) {
+  const hx = wcx() + wr(); // handle world x
+  const hy = wcy();         // handle world y
+  return Math.hypot(lx - hx, ly - hy) < 10 / zoom;
+}
+
+function hitNode(lx, ly) {
+  const ap = worldArr();
+  for (let i = 0; i < ap.length; i++) {
+    if (Math.hypot(lx-ap[i].x, ly-ap[i].y) < 10 / zoom) return i;
+  }
+  return -1;
+}
+
+// Check if circle center (world) is inside any zone
+function circleInAnyZone(wx, wy) {
+  for (const z of zones) {
+    const x1 = Math.min(z.x1,z.x2), x2 = Math.max(z.x1,z.x2);
+    const y1 = Math.min(z.y1,z.y2), y2 = Math.max(z.y1,z.y2);
+    if (wx >= x1 && wx <= x2 && wy >= y1 && wy <= y2) return true;
+  }
+  return false;
+}
+
+// Return index of zone containing world point, or -1
+function hitZone(wx, wy) {
+  for (let i = zones.length-1; i >= 0; i--) {
+    const z = zones[i];
+    const x1 = Math.min(z.x1,z.x2), x2 = Math.max(z.x1,z.x2);
+    const y1 = Math.min(z.y1,z.y2), y2 = Math.max(z.y1,z.y2);
+    if (wx >= x1 && wx <= x2 && wy >= y1 && wy <= y2) return i;
+  }
+  return -1;
+}
+
+function nearestSegPoint(lx, ly) {
+  const ap = worldArr();
+  let best = {segIdx:0, t:0, dist:Infinity, px:0, py:0};
+  for (let i = 0; i < ap.length-1; i++) {
+    const dx = ap[i+1].x-ap[i].x, dy = ap[i+1].y-ap[i].y;
+    const len2 = dx*dx+dy*dy;
+    if (len2 < 0.001) continue;
+    const t = Math.max(0, Math.min(1, ((lx-ap[i].x)*dx+(ly-ap[i].y)*dy)/len2));
+    const px2 = ap[i].x+dx*t, py2 = ap[i].y+dy*t;
+    const d = Math.hypot(lx-px2, ly-py2);
+    if (d < best.dist) best = {segIdx:i, t, dist:d, px:px2, py:py2};
+  }
+  return best;
+}
+
+canvas.addEventListener('mousedown', onDown);
+canvas.addEventListener('mousemove', onMove);
+canvas.addEventListener('mouseup', onUp);
+canvas.addEventListener('touchstart', e => { e.preventDefault(); onDown(e); }, {passive:false});
+canvas.addEventListener('touchmove', e => { e.preventDefault(); onMove(e); }, {passive:false});
+canvas.addEventListener('touchend', e => { e.preventDefault(); onUp(e); }, {passive:false});
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const { x: sx, y: sy } = getScreen(e);
+  // Normalize delta — trackpads send large deltaY values, clamp the zoom step
+  const delta = Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 50);
+  const factor = Math.pow(0.999, delta); // smooth exponential zoom
+  const newZoom = Math.max(0.05, Math.min(50, zoom * factor));
+  const scale = newZoom / zoom;
+  panX = sx - (sx - panX) * scale;
+  panY = sy - (sy - panY) * scale;
+  zoom = newZoom;
+  bestPos = null;
+  invalidateHeatmap();
+  draw();
+}, {passive: false});
+
+// Middle-mouse / space pan
+let panning = false, panStart = null;
+let spaceDown = false;
+
+document.addEventListener('keydown', e => {
+  if (e.code === 'Space') { spaceDown = true; canvas.style.cursor = 'grab'; e.preventDefault(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); undo(); }
+});
+document.addEventListener('keyup', e => {
+  if (e.code === 'Space') {
+    spaceDown = false;
+    const cursors = { move:'crosshair', add:'cell', del:'not-allowed', zone:'crosshair', zonedel:'pointer' };
+    if (!panning) canvas.style.cursor = cursors[mode] || 'crosshair';
+  }
+});
+
+canvas.addEventListener('mousedown', e => {
+  if (e.button === 2 || e.button === 1 || (e.button === 0 && spaceDown)) {
+    e.preventDefault();
+    panning = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    canvas.style.cursor = 'grabbing';
+  }
+});
+window.addEventListener('mousemove', e => {
+  if (panning) {
+    panX = e.clientX - panStart.x;
+    panY = e.clientY - panStart.y;
+    invalidateHeatmap();
+    draw();
+  }
+});
+window.addEventListener('mouseup', e => {
+  if (panning && (e.button === 2 || e.button === 1 || e.button === 0)) {
+    panning = false;
+    const cursors = { move:'crosshair', add:'cell', del:'not-allowed', zone:'crosshair', zonedel:'pointer' };
+    canvas.style.cursor = spaceDown ? 'grab' : (cursors[mode] || 'crosshair');
+  }
+});
+
+function onDown(e) {
+  if (e.button === 2 || e.button === 1 || (e.button === 0 && spaceDown)) return; // handled by pan
+  const {x, y} = getLogical(e);
+
+  if (mode === 'zone') {
+    zoneDrag = { wx: x, wy: y, cx: x, cy: y };
+    return;
+  }
+  if (mode === 'zonedel') {
+    const idx = hitZone(x, y);
+    if (idx >= 0) { pushUndo(); zones.splice(idx, 1); bestPos = null; draw(); }
+    return;
+  }
+  if (mode === 'move') {
+    const ni = hitNode(x, y);
+    if (ni >= 0) {
+      pushUndo();
+      const wp = worldArr()[ni];
+      dragStartWorld = {x: wp.x, y: wp.y};
+      dragDelta = {dx: 0, dy: 0};
+      dragging = {type:'node', idx:ni};
+      return;
     }
-
-    const farmForced = forceList.has('Farm');
-    const allForced = farmForced ? [...forcedNonFarm, 'Farm'] : [...forcedNonFarm];
-    const remaining = POOL.filter(t => !banned.has(t) && !allForced.includes(t));
-    const needed = 5 - allForced.length;
-    const randoms = shuffle(remaining).slice(0, needed);
-
-    const names = farmForced
-      ? ['Farm', ...forcedNonFarm, ...randoms]
-      : [...forcedNonFarm, ...randoms];
-
-    for (let i = 0; i < 5; i++) {
-      const el = document.getElementById('s' + i);
-      const slot = document.getElementById('slot' + i);
-      el.textContent = names[i] || '—';
-      fitSlotText(el);
-      slot.className = 'slot';
-      if (names[i] === 'Farm') slot.classList.add('farm');
-      else if (forcedSupport === names[i]) slot.classList.add('forced-support');
-      else if (forcedStall === names[i]) slot.classList.add('forced-aoe');
-      else if (forcedCC === names[i]) slot.classList.add('forced-cc');
-      else if (forcedDPS === names[i]) slot.classList.add('forced-dps');
-      else if (forcedListPicks.has(names[i])) slot.classList.add('forced-support');
+    if (hitRadiusHandle(x, y)) {
+      pushUndo();
+      dragStartWorld = {x: wr(), y: 0};
+      dragging = {type:'radius'};
+      return;
+    }
+    if (hitCircle(x, y)) {
+      pushUndo();
+      dragStartWorld = {x: wcx(), y: wcy()};
+      dragDelta = {dx: 0, dy: 0};
+      dragging = 'circle';
+      return;
     }
   }
+  if (mode === 'add') {
+    const wa = worldArr();
+    const THRESH = 10 / zoom;
 
-  function buildBanGrid() {
-    const grid = document.getElementById('ban-grid');
-    ALL_TOWERS_FULL.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'ban-btn';
-      btn.textContent = t;
-      if (DEFAULT_BANNED.has(t)) btn.classList.add('banned');
-      btn.onclick = () => {
-        if (banned.has(t)) banned.delete(t);
-        else banned.add(t);
-        btn.classList.toggle('banned');
-      };
-      grid.appendChild(btn);
+    // Check if clicking near first endpoint → prepend new point and drag it
+    if (Math.hypot(x - wa[0].x, y - wa[0].y) < THRESH) {
+      pushUndo();
+      const snapped = snapGrid(x, y);
+      pts.unshift({x: snapped.x, y: snapped.y});
+      dragStartWorld = {x: snapped.x, y: snapped.y};
+      dragDelta = {dx: 0, dy: 0};
+      dragging = {type:'node', idx: 0};
+      draw();
+      return;
+    }
+
+    // Check if clicking near last endpoint → append new point and drag it
+    const last = wa[wa.length - 1];
+    if (Math.hypot(x - last.x, y - last.y) < THRESH) {
+      pushUndo();
+      const snapped = snapGrid(x, y);
+      pts.push({x: snapped.x, y: snapped.y});
+      dragStartWorld = {x: snapped.x, y: snapped.y};
+      dragDelta = {dx: 0, dy: 0};
+      dragging = {type:'node', idx: pts.length - 1};
+      draw();
+      return;
+    }
+
+    // Otherwise insert along nearest segment
+    const seg = nearestSegPoint(x, y);
+    if (seg.dist < 20 / zoom) {
+      pushUndo();
+      const snapped = snapGrid(seg.px, seg.py);
+      pts.splice(seg.segIdx+1, 0, {x: snapped.x, y: snapped.y});
+      dragStartWorld = {x: snapped.x, y: snapped.y};
+      dragDelta = {dx: 0, dy: 0};
+      dragging = {type:'node', idx:seg.segIdx+1};
+      draw();
+    }
+    return;
+  }
+  if (mode === 'del') {
+    const ni = hitNode(x, y);
+    if (ni >= 0 && pts.length > 2) {
+      pushUndo();
+      pts.splice(ni, 1);
+      bestPos = null;
+      draw();
+    }
+    return;
+  }
+}
+
+function onMove(e) {
+  const {x, y} = getLogical(e);
+  if (zoneDrag) {
+    zoneDrag.cx = x; zoneDrag.cy = y;
+    draw();
+    return;
+  }
+  if (!dragging) return;
+  if (dragging === 'circle') {
+    circle.x = x;
+    circle.y = y;
+    if (dragStartWorld) dragDelta = {dx: x - dragStartWorld.x, dy: y - dragStartWorld.y};
+  } else if (dragging.type === 'radius') {
+    const dist = Math.hypot(x - wcx(), y - wcy());
+    radius = Math.max(0.1, dist);
+    bestPos = null;
+    document.getElementById('rad').value = radius.toFixed(2);
+  } else if (dragging.type === 'node') {
+    const snapped = snapGrid(x, y);
+    pts[dragging.idx] = {x: snapped.x, y: snapped.y};
+    if (dragStartWorld) dragDelta = {dx: snapped.x - dragStartWorld.x, dy: snapped.y - dragStartWorld.y};
+    bestPos = null;
+    invalidateHeatmap();
+  }
+  draw();
+}
+
+function onUp() {
+  if (zoneDrag) {
+    const w = Math.abs(zoneDrag.cx - zoneDrag.wx);
+    const h = Math.abs(zoneDrag.cy - zoneDrag.wy);
+    if (w > 4 / zoom && h > 4 / zoom) {
+      pushUndo();
+      zones.push({ x1: zoneDrag.wx, y1: zoneDrag.wy, x2: zoneDrag.cx, y2: zoneDrag.cy });
+      bestPos = null;
+    }
+    zoneDrag = null;
+    draw();
+    return;
+  }
+  dragging = null; dragStartWorld = null; dragDelta = null; draw();
+}
+
+function onRadChange(v) {
+  const n = parseFloat(v);
+  if (!isNaN(n) && n > 0) { pushUndo(); radius = n; }
+  bestPos = null;
+  invalidateHeatmap();
+  draw();
+}
+
+// --- Import / Export ---
+function ioStatus(msg, ok) {
+  const el = document.getElementById('io-status');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--accent)' : 'var(--danger)';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+}
+
+function exportPath() {
+  const text = JSON.stringify(centeredCoords());
+  navigator.clipboard.writeText(text)
+    .then(() => ioStatus('Copied!', true))
+    .catch(() => {
+      // Fallback for browsers that block clipboard
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      ioStatus('Copied!', true);
     });
+}
+
+function importPath() {
+  navigator.clipboard.readText()
+    .then(text => {
+      try {
+        const raw = JSON.parse(text);
+        if (!Array.isArray(raw) || raw.length < 2) throw new Error('Need at least 2 points');
+        const newPts = raw.map(p => {
+          if (!Array.isArray(p) || p.length < 2) throw new Error('Bad point');
+          return {x: p[0], y: p[1]};
+        });
+        pushUndo();
+        pts = newPts;
+        bestPos = null;
+        draw();
+        ioStatus(`Loaded ${pts.length} points`, true);
+      } catch(err) {
+        ioStatus('Invalid format', false);
+      }
+    })
+    .catch(() => ioStatus('Clipboard access denied', false));
+}
+
+// --- Presets ---
+const COOKIE_KEY = 'cpo_presets';
+
+const BUILTIN_PRESETS = {
+  'savannah': {
+    pts: [[-16,-7],[-5,-7],[-5,-27],[12,-27],[12,3],[1,3],[1,15],[-3,15],[-3,27],[17,27]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:-16, y:-7}
+  },
+  'canyon': {
+    pts: [[-43,7],[-28,7],[-28,17],[-10,17],[-10,6],[-17,6],[-17,-10],[-2,-10],[-2,-16],[18,-16],[18,-13],[21,-13],[21,8],[43,8]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:-43, y:7}
+  },
+  'mars': {
+    pts: [[-2,-39],[-2,-26],[-13,-26],[-13,-3],[13,-3],[13,11],[-1,11],[-1,39]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:-2, y:-39}
+  },
+  'way out': {
+    pts: [[4,-32],[14,-32],[14,1],[-1,1],[-1,-10],[-13,-10],[-13,19],[8,19],[8,33]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:4, y:-32}
+  },
+  'city': {
+    pts: [[2,-41],[2,-24],[17,-24],[17,-10],[-6,-10],[-6,-2],[-17,-2],[-17,15],[-2,15],[-2,41]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:2, y:-41}
+  },
+  'farm fields': {
+    pts: [[0,-43],[0,-13],[-14,-13],[-14,1],[14,1],[14,15],[0,15],[0,44]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:0, y:-43}
+  },
+  'grasslands': {
+    pts: [[16,-45],[16,-5],[-15,-5],[-15,45]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:16, y:-45}
+  },
+  'castle': {
+    pts: [[-1,-44],[-1,-28],[15,-28],[15,-11],[-1,-11],[-1,11],[-14,11],[-14,22],[-1,22],[-1,44]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:-1, y:-44}
+  },
+  'midnight road': {
+    pts: [[2,-42],[2,-27],[17,-27],[17,-13],[-10,-13],[-10,-26],[-22,-26],[-22,0],[23,0],[23,16],[10,16],[10,11],[-10,11],[-10,26],[2,26],[2,42]].map(([x,y]) => ({x,y})),
+    zones: [], radius: 5,
+    circle: {x:2, y:-42}
+  },
+};
+
+function getCookiePresets() {
+  try {
+    const match = document.cookie.split('; ').find(r => r.startsWith(COOKIE_KEY + '='));
+    if (!match) return {};
+    return JSON.parse(decodeURIComponent(match.split('=').slice(1).join('=')));
+  } catch { return {}; }
+}
+
+function setCookiePresets(obj) {
+  const val = encodeURIComponent(JSON.stringify(obj));
+  // 1 year expiry
+  const exp = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${COOKIE_KEY}=${val};expires=${exp};path=/;SameSite=Lax`;
+}
+
+function presetStatus(msg, ok) {
+  const el = document.getElementById('preset-status');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--accent)' : 'var(--danger)';
+  el.style.opacity = '1';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.style.opacity = '0'; }, 2500);
+}
+
+function savePreset() {
+  const nameEl = document.getElementById('preset-name');
+  const name = nameEl.value.trim();
+  if (!name) { presetStatus('Enter a name first', false); return; }
+  const presets = getCookiePresets();
+  const centered = centeredCoords();
+  const wa = worldArr();
+  const xs = wa.map(p => p.x), ys = wa.map(p => p.y);
+  const ox = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const oy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  presets[name] = {
+    pts: centered,
+    zones: zones.map(z => [z.x1 - ox, z.y1 - oy, z.x2 - ox, z.y2 - oy]),
+    radius,
+    circle: [Math.round(wcx() - ox), Math.round(wcy() - oy)]
+  };
+  setCookiePresets(presets);
+  nameEl.value = '';
+  renderPresets();
+  presetStatus(`Saved "${name}"`, true);
+}
+
+function loadPreset(name) {
+  const presets = { ...BUILTIN_PRESETS, ...getCookiePresets() };
+  const p = presets[name];
+  if (!p) { presetStatus('Preset not found', false); return; }
+  try {
+    pushUndo();
+    pts = p.pts.map(pt => Array.isArray(pt) ? {x: pt[0], y: pt[1]} : {x: pt.x, y: pt.y});
+    zones = (p.zones || []).map(z => Array.isArray(z) ? {x1:z[0],y1:z[1],x2:z[2],y2:z[3]} : z);
+    if (p.circle) {
+      circle = Array.isArray(p.circle)
+        ? { x: p.circle[0], y: p.circle[1] }
+        : { x: p.circle.x, y: p.circle.y };
+    }
+    bestPos = null;
+    fitView();
+    draw();
+    presetStatus(`Loaded "${name}"`, true);
+  } catch(e) { presetStatus('Failed to load', false); }
+}
+
+function deletePreset(name) {
+  const presets = getCookiePresets();
+  delete presets[name];
+  setCookiePresets(presets);
+  renderPresets();
+  presetStatus(`Deleted "${name}"`, true);
+}
+
+function presetPathLength(p) {
+  const pts2 = p.pts.map(pt => Array.isArray(pt) ? {x: pt[0], y: pt[1]} : {x: pt.x, y: pt.y});
+  let l = 0;
+  for (let i = 0; i < pts2.length - 1; i++) l += Math.hypot(pts2[i+1].x - pts2[i].x, pts2[i+1].y - pts2[i].y);
+  return l;
+}
+
+function renderPresets() {
+  const list = document.getElementById('preset-list');
+  const userPresets = getCookiePresets();
+  const allPresets = { ...BUILTIN_PRESETS, ...userPresets };
+  const isBuiltin = name => name in BUILTIN_PRESETS;
+
+  const sorted = Object.keys(allPresets).sort((a, b) =>
+    presetPathLength(allPresets[a]) - presetPathLength(allPresets[b])
+  );
+
+  let html = '';
+  for (const name of sorted) {
+    const builtin = isBuiltin(name);
+    const safeName = name.replace(/'/g, "\\'");
+    const len = presetPathLength(allPresets[name]).toFixed(1);
+    html += `<div class="preset-item">
+      <span title="${name} — length: ${len}" onclick="loadPreset('${safeName}')">▷ ${name}</span>
+      ${builtin
+        ? `<span style="font-size:9px;color:var(--text3);padding:0 4px;flex-shrink:0">built-in</span>`
+        : `<button onclick="deletePreset('${safeName}')">✕</button>`}
+    </div>`;
+  }
+  if (!html) html = '<p class="hint">No presets saved yet.</p>';
+  list.innerHTML = html;
+}
+
+// Allow Enter key to save preset
+document.getElementById('preset-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') savePreset();
+});
+
+// --- Sidebar resize ---
+(function() {
+  const handle = document.getElementById('sb-resize');
+  const sidebar = document.getElementById('sidebar');
+  const BASE_WIDTH = 220;
+  let resizing = false, startX = 0, startW = 0;
+
+  function setSidebarWidth(w) {
+    w = Math.max(140, Math.min(600, w));
+    sidebar.style.width = w + 'px';
+    // Remove old threshold classes
+    sidebar.classList.remove('sb-sm', 'sb-md', 'sb-lg', 'sb-xl');
+    if (w < 180)      sidebar.classList.add('sb-sm');
+    else if (w < 280) sidebar.classList.add('sb-md');
+    else if (w < 380) sidebar.classList.add('sb-lg');
+    else              sidebar.classList.add('sb-xl');
   }
 
-  function buildForceListGrid() {
-    const grid = document.getElementById('force-list-grid');
-    ALL_TOWERS_FULL.forEach(t => {
-      const btn = document.createElement('button');
-      btn.className = 'force-list-btn';
-      btn.textContent = t;
-      if (forceList.has(t)) btn.classList.add('forced');
-      btn.onclick = () => {
-        if (forceList.has(t)) forceList.delete(t);
-        else forceList.add(t);
-        btn.classList.toggle('forced');
-      };
-      grid.appendChild(btn);
-    });
-  }
+  handle.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    resizing = true;
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+    e.preventDefault();
+  });
 
-  buildBanGrid();
-  buildForceListGrid();
+  window.addEventListener('mousemove', e => {
+    if (!resizing) return;
+    // Sidebar is on the right, dragging left = wider
+    const delta = startX - e.clientX;
+    setSidebarWidth(startW + delta);
+    // Trigger canvas resize to fill remaining space
+    resize();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!resizing) return;
+    resizing = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+})();
+
+// Init
+resize();
+renderPresets();
 </script>
 </body>
 </html>
